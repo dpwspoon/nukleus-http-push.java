@@ -149,8 +149,7 @@ public final class Target implements Nukleus
 
     public void doHttpData(
         long targetId,
-        OctetsFW payload,
-        int flagsAndOpcode)
+        OctetsFW payload)
     {
         DataFW data = dataRW.wrap(writeBuffer, 0, writeBuffer.capacity())
                 .streamId(targetId)
@@ -171,7 +170,7 @@ public final class Target implements Nukleus
         streamsBuffer.write(end.typeId(), end.buffer(), end.offset(), end.sizeof());
     }
 
-    public void doH2PushPromise(
+    public int doH2PushPromise(
         long targetId,
         ListFW<HttpHeaderFW> headersFW,
         Consumer<ListFW.Builder<HttpHeaderFW.Builder, HttpHeaderFW>> mutator)
@@ -189,6 +188,7 @@ public final class Target implements Nukleus
             .build();
 
         streamsBuffer.write(data.typeId(), data.buffer(), data.offset(), data.sizeof());
+        return data.sizeof();
     }
 
     private Flyweight.Builder.Visitor injectSyncHeaders(
