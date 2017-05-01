@@ -47,7 +47,6 @@ public final class TargetOutputEstablishedStreamFactory
     private final DataFW dataRO = new DataFW();
     private final EndFW endRO = new EndFW();
     private final ListFW<HttpHeaderFW> headersFW = new HttpBeginExFW().headers();
-    private final HttpBeginExFW httpBeginExFW = new HttpBeginExFW();
 
     private final HttpBeginExFW httpBeginExRO = new HttpBeginExFW();
 
@@ -79,8 +78,6 @@ public final class TargetOutputEstablishedStreamFactory
     private final class TargetOutputEstablishedStream
     {
         private MessageHandler streamState;
-        boolean lockThrottle = false;
-        int throttleDebt = 0;
 
         private long sourceId;
 
@@ -228,12 +225,11 @@ public final class TargetOutputEstablishedStreamFactory
                     headersFW.wrap(h2PushBuffer, 0, correlation.slabSlotLimit());
                     if (headersFW.anyMatch(IS_POLL_HEADER))
                     {
-                        this.throttleDebt += newTarget.doH2PushPromise(newTargetId, headersFW, x -> headersFW
+                        newTarget.doH2PushPromise(newTargetId, headersFW, x -> headersFW
                             .forEach(h -> x.item(y ->
                             {
                                 y.representation((byte) 0).name(h.name()).value(h.value());
                             })));
-                        unlockThrottle();
                     }
                 }
 
@@ -298,39 +294,9 @@ public final class TargetOutputEstablishedStreamFactory
             int length)
         {
             windowRO.wrap(buffer, index, index + length);
-            if(this.lockThrottle)
-            {
-                int update = windowRO.update();
-                this.throttleDebt -= update;
-            }
-            else if (this.throttleDebt > 0)
-            {
-                int update = windowRO.update();
-                update = update - this.throttleDebt;
-                if (update >= 0)
-                {
-                    source.doWindow(sourceId, update);
-                    this.throttleDebt = 0;
-                }
-                else
-                {
-                    this.throttleDebt = Math.abs(this.throttleDebt);
-                }
-            }
-            else
+            if(windowRO.update() > 0)
             {
                 source.doWindow(sourceId, windowRO.update());
-            }
-        }
-
-        private void unlockThrottle()
-        {
-            this.lockThrottle = false;
-            if(this.throttleDebt < 0)
-            {
-                System.out.println("Unlocked Throttle sent Window");
-                source.doWindow(sourceId, Math.abs(this.throttleDebt));
-                this.throttleDebt = 0;
             }
         }
 
