@@ -40,7 +40,7 @@ import org.reaktivity.nukleus.http.push.internal.conductor.Conductor;
 import org.reaktivity.nukleus.http.push.internal.layouts.StreamsLayout;
 import org.reaktivity.nukleus.http.push.internal.routable.stream.Slab;
 import org.reaktivity.nukleus.http.push.internal.router.Correlation;
-import org.reaktivity.nukleus.http.push.internal.util.DelayExecutionTimer;
+import org.reaktivity.nukleus.http.push.internal.util.DelayedTaskScheduler;
 import org.reaktivity.nukleus.http.push.internal.util.function.LongObjectBiConsumer;
 
 @Reaktive
@@ -61,7 +61,7 @@ public final class Routable extends Nukleus.Composite
     private final LongSupplier supplyTargetId;
     private final Slab slab;
 
-    private final DelayExecutionTimer delayExecutionTimer = new DelayExecutionTimer();
+    private final DelayedTaskScheduler delayExecutionTimer = new DelayedTaskScheduler();
 
 
     public Routable(

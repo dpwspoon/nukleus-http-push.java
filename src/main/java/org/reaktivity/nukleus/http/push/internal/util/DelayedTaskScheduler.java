@@ -21,18 +21,18 @@ import java.util.TreeSet;
 
 import org.agrona.collections.Long2ObjectHashMap;
 
-public class DelayExecutionTimer
+public class DelayedTaskScheduler
 {
-    private final Long2ObjectHashMap<ScheduledTask> taskLookup;
+    private final Long2ObjectHashMap<Runnable> taskLookup;
     private final SortedSet<Long> scheduledTimes;
 
-    public DelayExecutionTimer()
+    public DelayedTaskScheduler()
     {
         this.taskLookup = new Long2ObjectHashMap<>();
         this.scheduledTimes = new TreeSet<>();
     }
 
-    public void schedule(Long time, ScheduledTask task)
+    public void schedule(Long time, Runnable task)
     {
         if(this.scheduledTimes.add(time))
         {
@@ -44,8 +44,8 @@ public class DelayExecutionTimer
             {
                 return () ->
                 {
-                    t1.execute();
-                    t2.execute();
+                    t1.run();
+                    t2.run();
                 };
             });
         }
@@ -63,7 +63,7 @@ public class DelayExecutionTimer
                 break;
             }
             scheduledTimes.remove(s);
-            taskLookup.remove(s).execute();
+            taskLookup.remove(s).run();
         }
     }
 }

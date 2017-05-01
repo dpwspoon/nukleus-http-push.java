@@ -29,10 +29,10 @@ import org.agrona.concurrent.MessageHandler;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.reaktivity.nukleus.Nukleus;
 import org.reaktivity.nukleus.http.push.internal.layouts.StreamsLayout;
-import org.reaktivity.nukleus.http.push.internal.routable.stream.SourceOutputStreamFactory;
-import org.reaktivity.nukleus.http.push.internal.routable.stream.TargetInputEstablishedStreamFactory;
 import org.reaktivity.nukleus.http.push.internal.routable.stream.Slab;
 import org.reaktivity.nukleus.http.push.internal.routable.stream.SourceInputStreamFactory;
+import org.reaktivity.nukleus.http.push.internal.routable.stream.SourceOutputStreamFactory;
+import org.reaktivity.nukleus.http.push.internal.routable.stream.TargetInputEstablishedStreamFactory;
 import org.reaktivity.nukleus.http.push.internal.routable.stream.TargetOutputEstablishedStreamFactory;
 import org.reaktivity.nukleus.http.push.internal.router.Correlation;
 import org.reaktivity.nukleus.http.push.internal.router.RouteKind;
@@ -40,7 +40,6 @@ import org.reaktivity.nukleus.http.push.internal.types.stream.BeginFW;
 import org.reaktivity.nukleus.http.push.internal.types.stream.FrameFW;
 import org.reaktivity.nukleus.http.push.internal.types.stream.ResetFW;
 import org.reaktivity.nukleus.http.push.internal.types.stream.WindowFW;
-import org.reaktivity.nukleus.http.push.internal.util.ScheduledTask;
 import org.reaktivity.nukleus.http.push.internal.util.function.LongObjectBiConsumer;
 
 public final class Source implements Nukleus
@@ -74,7 +73,7 @@ public final class Source implements Nukleus
         LongFunction<Correlation> correlateEstablished,
         LongFunction<Correlation> lookupEstablished,
         Slab slab,
-        LongObjectBiConsumer<ScheduledTask> schedule)
+        LongObjectBiConsumer<Runnable> schedule)
     {
         this.sourceName = sourceName;
         this.partitionName = partitionName;

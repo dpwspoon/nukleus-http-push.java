@@ -47,7 +47,6 @@ import org.reaktivity.nukleus.http.push.internal.types.stream.HttpBeginExFW;
 import org.reaktivity.nukleus.http.push.internal.types.stream.ResetFW;
 import org.reaktivity.nukleus.http.push.internal.types.stream.WindowFW;
 import org.reaktivity.nukleus.http.push.internal.util.HttpHeadersUtil;
-import org.reaktivity.nukleus.http.push.internal.util.ScheduledTask;
 import org.reaktivity.nukleus.http.push.internal.util.function.LongObjectBiConsumer;
 
 public final class SourceInputStreamFactory
@@ -59,7 +58,7 @@ public final class SourceInputStreamFactory
     private final EndFW endRO = new EndFW();
     private final OctetsFW octetsRO = new OctetsFW();
 
-    private final LongObjectBiConsumer<ScheduledTask> scheduler;
+    private final LongObjectBiConsumer<Runnable> scheduler;
     private final HttpBeginExFW httpBeginExRO = new HttpBeginExFW();
 
     private final WindowFW windowRO = new WindowFW();
@@ -80,7 +79,7 @@ public final class SourceInputStreamFactory
         LongSupplier supplyTargetId,
         LongObjectBiConsumer<Correlation> correlateNew,
         Slab slab,
-        LongObjectBiConsumer<ScheduledTask> scheduler)
+        LongObjectBiConsumer<Runnable> scheduler)
     {
         this.source = source;
         this.supplyRoutes = supplyRoutes;
