@@ -128,7 +128,7 @@
         <version>${nukleus.plugin.version}</version>
         <configuration>
           <scopeNames>core http http2 http-push</scopeNames>
-          <packageName>org.reaktivity.nukleus.http.push.internal.types</packageName>
+          <packageName>org.reaktivity.nukleus.http_push.internal.types</packageName>
         </configuration>
         <executions>
           <execution>

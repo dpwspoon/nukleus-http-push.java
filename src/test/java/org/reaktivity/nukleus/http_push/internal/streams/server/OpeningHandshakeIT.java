@@ -34,8 +34,8 @@ import org.reaktivity.reaktor.test.NukleusRule;
 public class OpeningHandshakeIT
 {
     private final K3poRule k3po = new K3poRule()
-        .addScriptRoot("route", "org/reaktivity/specification/nukleus/http/push/control/route")
-        .addScriptRoot("streams", "org/reaktivity/specification/nukleus/http/push/streams/opening");
+        .addScriptRoot("route", "org/reaktivity/specification/nukleus/http_push/control/route")
+        .addScriptRoot("streams", "org/reaktivity/specification/nukleus/http_push/streams/opening");
 
     private final TestRule timeout = new DisableOnDebug(new Timeout(5, SECONDS));
 

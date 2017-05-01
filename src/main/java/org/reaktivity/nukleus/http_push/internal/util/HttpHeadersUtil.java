@@ -19,8 +19,8 @@ package org.reaktivity.nukleus.http_push.internal.util;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import org.reaktivity.nukleus.http.push.internal.types.HttpHeaderFW;
-import org.reaktivity.nukleus.http.push.internal.types.ListFW;
+import org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW;
+import org.reaktivity.nukleus.http_push.internal.types.ListFW;
 
 // TODO move into ListFW and HttpHeaderFW by implementing stream
 public final class HttpHeadersUtil

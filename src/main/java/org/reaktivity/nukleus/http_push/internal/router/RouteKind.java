@@ -18,8 +18,8 @@ package org.reaktivity.nukleus.http_push.internal.router;
 import java.util.function.LongSupplier;
 
 import org.agrona.concurrent.status.AtomicCounter;
-import org.reaktivity.nukleus.http.push.internal.types.control.Role;
-import org.reaktivity.nukleus.http.push.internal.types.control.State;
+import org.reaktivity.nukleus.http_push.internal.types.control.Role;
+import org.reaktivity.nukleus.http_push.internal.types.control.State;
 
 public enum RouteKind
 {

@@ -30,8 +30,8 @@ import org.reaktivity.reaktor.test.NukleusRule;
 public class ControlIT
 {
     private final K3poRule k3po = new K3poRule()
-        .addScriptRoot("route", "org/reaktivity/specification/nukleus/http/push/control/route")
-        .addScriptRoot("unroute", "org/reaktivity/specification/nukleus/http/push/control/unroute");
+        .addScriptRoot("route", "org/reaktivity/specification/nukleus/http_push/control/route")
+        .addScriptRoot("unroute", "org/reaktivity/specification/nukleus/http_push/control/unroute");
 
     private final TestRule timeout = new DisableOnDebug(new Timeout(5, SECONDS));
 
