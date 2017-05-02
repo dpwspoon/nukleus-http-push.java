@@ -162,7 +162,6 @@ public final class TargetOutputEstablishedStreamFactory
                 final long streamId = endRO.streamId();
 
                 source.removeStream(streamId);
-
                 this.streamState = this::afterEnd;
             }
         }

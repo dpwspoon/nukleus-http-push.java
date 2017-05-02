@@ -359,6 +359,7 @@ public final class SourceInputStreamFactory
             int length)
         {
             endRO.wrap(buffer, index, index + length);
+            this.target.doHttpEnd(this.targetId);
             final long streamId = endRO.streamId();
             this.streamState = this::afterEnd;
 
