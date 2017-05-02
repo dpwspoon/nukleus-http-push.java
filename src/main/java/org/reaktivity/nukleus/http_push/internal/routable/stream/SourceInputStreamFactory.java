@@ -15,6 +15,7 @@
  */
 package org.reaktivity.nukleus.http_push.internal.routable.stream;
 
+import static org.reaktivity.nukleus.http_push.internal.routable.stream.Slab.NO_SLOT;
 import static org.reaktivity.nukleus.http_push.internal.router.RouteKind.OUTPUT_ESTABLISHED;
 import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.INJECTED_HEADER_AND_NO_CACHE;
 import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.INJECTED_HEADER_NAME;
@@ -257,6 +258,11 @@ public final class SourceInputStreamFactory
                     final ListFW<HttpHeaderFW> headers = httpBeginExRO.headers();
 
                     int slotIndex = slab.acquire(streamId);
+                    if(slotIndex == NO_SLOT)
+                    {
+                        System.out.println("TODO");
+                        throw new RuntimeException("TODO");
+                    }
                     final MutableDirectBuffer store = slab.buffer(slotIndex);
                     storeHeadersForTargetEstablish(headers, store);
 
@@ -272,7 +278,6 @@ public final class SourceInputStreamFactory
                     {
                         newTarget.doHttpBegin(newTargetId, targetRef, targetCorrelationId, beginRO.extension());
                         newTarget.addThrottle(newTargetId, this::handleThrottle);
-
                     }
 
                     final Correlation correlation = new Correlation(correlationId, source.routableName(),

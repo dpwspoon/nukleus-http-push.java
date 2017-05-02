@@ -230,6 +230,7 @@ public final class TargetOutputEstablishedStreamFactory
                                 y.representation((byte) 0).name(h.name()).value(h.value());
                             })));
                     }
+                    correlation.slab().release(slabIndex);
                 }
 
                 newTarget.addThrottle(newTargetId, this::handleThrottle);
