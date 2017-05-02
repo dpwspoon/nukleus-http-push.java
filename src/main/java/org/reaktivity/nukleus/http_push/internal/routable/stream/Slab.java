@@ -30,9 +30,9 @@ import org.agrona.concurrent.UnsafeBuffer;
  * to store data in it, and releasing the slot once it is no longer needed.
  * <b>Each instance of this class is assumed to be used by one and only one thread.</b>
  */
-public final class Slab
+public class Slab
 {
-    public static final int NO_SLOT = -1;
+    static final int NO_SLOT = -1;
 
     private final MutableDirectBuffer mutableFW = new UnsafeBuffer(new byte[0]);
 
@@ -85,6 +85,7 @@ public final class Slab
         }
         used.set(slot);
         availableSlots--;
+
         return slot;
     }
 
@@ -107,18 +108,9 @@ public final class Slab
      */
     public void release(int slot)
     {
-        if (slot != NO_SLOT)
-        {
-            assert used.get(slot);
-            used.clear(slot);
-            availableSlots++;
-        }
-    }
-
-    public int slotCapacity()
-    {
-        return slotCapacity;
+        assert used.get(slot);
+        used.clear(slot);
+        availableSlots++;
     }
 
 }
-
