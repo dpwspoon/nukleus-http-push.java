@@ -28,9 +28,9 @@ import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.MessageHandler;
-import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.reaktivity.nukleus.Nukleus;
+import org.reaktivity.nukleus.http_push.internal.layouts.StreamsLayout;
 import org.reaktivity.nukleus.http_push.internal.types.Flyweight;
 import org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW;
@@ -40,9 +40,7 @@ import org.reaktivity.nukleus.http_push.internal.types.stream.BeginFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.DataFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.EndFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.FrameFW;
-import org.reaktivity.nukleus.http_push.internal.types.stream.Http2DataExFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.HttpBeginExFW;
-import org.reaktivity.nukleus.http_push.internal.layouts.StreamsLayout;
 
 public final class Target implements Nukleus
 {
@@ -50,7 +48,6 @@ public final class Target implements Nukleus
 
     private final BeginFW.Builder beginRW = new BeginFW.Builder();
     private final DataFW.Builder dataRW = new DataFW.Builder();
-    private final Http2DataExFW.Builder http2DataExRW = new Http2DataExFW.Builder();
     private final EndFW.Builder endRW = new EndFW.Builder();
 
     private final HttpBeginExFW.Builder httpBeginExRW = new HttpBeginExFW.Builder();
@@ -175,15 +172,10 @@ public final class Target implements Nukleus
         ListFW<HttpHeaderFW> headersFW,
         Consumer<ListFW.Builder<HttpHeaderFW.Builder, HttpHeaderFW>> mutator)
     {
-        MutableDirectBuffer mutableBuff = new UnsafeBuffer(new byte[4096]);
-
-        Http2DataExFW push = http2DataExRW.wrap(mutableBuff, 0, mutableBuff.capacity())
-                .headers(mutator)
-                .build();
 
         DataFW data = dataRW.wrap(writeBuffer, 0, writeBuffer.capacity())
             .streamId(targetId)
-            .payload(p -> p.set(push.buffer(), 0, 0))
+            .payload(e -> e.reset())
             .extension(e -> e.set(injectSyncHeaders(mutator, headersFW)))
             .build();
 
