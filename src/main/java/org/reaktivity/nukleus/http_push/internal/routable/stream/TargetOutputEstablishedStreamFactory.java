@@ -268,6 +268,7 @@ public final class TargetOutputEstablishedStreamFactory
                 }
 
                 newTarget.addThrottle(newTargetId, this::handleThrottle);
+                source.doWindow(newSourceId, 8 * 1024);
 
                 this.sourceId = newSourceId;
                 this.target = newTarget;
