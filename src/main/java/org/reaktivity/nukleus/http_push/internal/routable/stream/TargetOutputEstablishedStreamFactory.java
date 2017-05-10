@@ -260,12 +260,12 @@ public final class TargetOutputEstablishedStreamFactory
                     {
                         newTarget.doHttpBegin(newTargetId, 0L, sourceCorrelationId, e -> e.set(extension));
                     }
+                    correlation.slab().release(slabIndex);
                 }
                 else
                 {
                     newTarget.doHttpBegin(newTargetId, 0L, sourceCorrelationId, e -> e.set(extension));
                 }
-                correlation.slab().release(slabIndex);
 
                 newTarget.addThrottle(newTargetId, this::handleThrottle);
 
