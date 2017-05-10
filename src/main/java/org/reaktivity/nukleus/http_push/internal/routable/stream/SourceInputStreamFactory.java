@@ -276,7 +276,7 @@ public final class SourceInputStreamFactory
                     }
                     else
                     {
-                        newTarget.doHttpBegin(newTargetId, targetRef, targetCorrelationId, beginRO.extension());
+                        newTarget.doHttpBegin(newTargetId, targetRef, targetCorrelationId, e -> e.set(beginRO.extension()));
                         newTarget.addThrottle(newTargetId, this::handleThrottle);
                     }
 
@@ -340,7 +340,7 @@ public final class SourceInputStreamFactory
             scheduler.accept(System.currentTimeMillis() + (pollInterval * 1000), () ->
             {
                 octetsRO.wrap(store, 0, pollExtensionSize);
-                newTarget.doHttpBegin(newTargetId, targetRef, targetCorrelationId, octetsRO);
+                newTarget.doHttpBegin(newTargetId, targetRef, targetCorrelationId, e -> e.set(octetsRO));
                 newTarget.addThrottle(newTargetId, this::handleThrottle);
                 slab.release(slotIndex);
             });

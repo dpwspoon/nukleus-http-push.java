@@ -17,7 +17,9 @@ package org.reaktivity.nukleus.http_push.internal.routable.stream;
 
 import static org.reaktivity.nukleus.http_push.internal.routable.stream.Slab.NO_SLOT;
 import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.IS_POLL_HEADER;
+import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.POLL_HEADER_NAME;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.LongFunction;
 import java.util.function.LongSupplier;
@@ -25,8 +27,14 @@ import java.util.function.LongSupplier;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.MessageHandler;
+import org.reaktivity.nukleus.http_push.internal.routable.Source;
+import org.reaktivity.nukleus.http_push.internal.routable.Target;
+import org.reaktivity.nukleus.http_push.internal.router.Correlation;
+import org.reaktivity.nukleus.http_push.internal.types.Flyweight;
+import org.reaktivity.nukleus.http_push.internal.types.Flyweight.Builder.Visitor;
 import org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW;
+import org.reaktivity.nukleus.http_push.internal.types.ListFW.Builder;
 import org.reaktivity.nukleus.http_push.internal.types.OctetsFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.BeginFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.DataFW;
@@ -35,9 +43,6 @@ import org.reaktivity.nukleus.http_push.internal.types.stream.FrameFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.HttpBeginExFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.ResetFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.WindowFW;
-import org.reaktivity.nukleus.http_push.internal.routable.Source;
-import org.reaktivity.nukleus.http_push.internal.routable.Target;
-import org.reaktivity.nukleus.http_push.internal.router.Correlation;
 
 public final class TargetOutputEstablishedStreamFactory
 {
@@ -47,6 +52,7 @@ public final class TargetOutputEstablishedStreamFactory
     private final DataFW dataRO = new DataFW();
     private final EndFW endRO = new EndFW();
     private final ListFW<HttpHeaderFW> headersFW = new HttpBeginExFW().headers();
+    private final HttpBeginExFW.Builder httpBeginExRW = new HttpBeginExFW.Builder();
 
     private final HttpBeginExFW httpBeginExRO = new HttpBeginExFW();
 
@@ -77,12 +83,17 @@ public final class TargetOutputEstablishedStreamFactory
 
     private final class TargetOutputEstablishedStream
     {
+        private static final int NETWORK_ROUND_TRIP_TIME = 2;
+
         private MessageHandler streamState;
 
         private long sourceId;
 
         private Target target;
         private long targetId;
+
+        // Needed due to effective final. TODO fix
+        private int pollInterval;
 
         private TargetOutputEstablishedStream()
         {
@@ -216,22 +227,45 @@ public final class TargetOutputEstablishedStreamFactory
                     }
                 });
 
-                newTarget.doHttpBegin(newTargetId, 0L, sourceCorrelationId, beginRO.extension());
                 int slabIndex = correlation.slabIndex();
-                if(slabIndex != NO_SLOT)
+                if (slabIndex != NO_SLOT)
                 {
-                    MutableDirectBuffer h2PushBuffer = correlation.slab().buffer(slabIndex);
-                    headersFW.wrap(h2PushBuffer, 0, correlation.slabSlotLimit());
-                    if (headersFW.anyMatch(IS_POLL_HEADER))
+                    // TODO simplify if else logic
+                    MutableDirectBuffer savedRequest = correlation.slab().buffer(slabIndex);
+                    headersFW.wrap(savedRequest, 0, correlation.slabSlotLimit());
+                    boolean sendUpdateOnChange = headersFW.anyMatch(IS_POLL_HEADER);
+                    if(sendUpdateOnChange)
                     {
-                        newTarget.doH2PushPromise(newTargetId, headersFW, x -> headersFW
-                            .forEach(h -> x.item(y ->
+                        Consumer<Builder<org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW.Builder, HttpHeaderFW>>
+                            extensions = headersToExtensions(headersFW);
+
+                        // TODO could occur twice, really want firstInstance or something,
+                        // but guaranteed to happen once cause of above
+                         headersFW.forEach(h ->
+                         {
+                            if(POLL_HEADER_NAME.equals(h.name().asString()))
                             {
-                                y.representation((byte) 0).name(h.name()).value(h.value());
-                            })));
+                                this.pollInterval = Integer.parseInt(h.value().asString());
+                            }
+                        });
+                        headersFW.wrap(extension.buffer(), extension.offset(), extension.limit());
+                        Visitor injectStaleWhileRevalidate = injectStaleWhileRevalidate(extensions,
+                                httpBeginEx.headers(), pollInterval);
+                        newTarget.doHttpBegin(newTargetId, 0L, sourceCorrelationId, injectStaleWhileRevalidate);
+
+                        headersFW.wrap(savedRequest, 0, correlation.slabSlotLimit());
+                        newTarget.doH2PushPromise(newTargetId, headersFW, headersToExtensions(headersFW));
                     }
-                    correlation.slab().release(slabIndex);
+                    else
+                    {
+                        newTarget.doHttpBegin(newTargetId, 0L, sourceCorrelationId, e -> e.set(extension));
+                    }
                 }
+                else
+                {
+                    newTarget.doHttpBegin(newTargetId, 0L, sourceCorrelationId, e -> e.set(extension));
+                }
+                correlation.slab().release(slabIndex);
 
                 newTarget.addThrottle(newTargetId, this::handleThrottle);
 
@@ -308,6 +342,40 @@ public final class TargetOutputEstablishedStreamFactory
             resetRO.wrap(buffer, index, index + length);
 
             source.doReset(sourceId);
+        }
+
+        private Consumer<Builder<org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW.Builder, HttpHeaderFW>>
+        headersToExtensions(ListFW<HttpHeaderFW> headersFW)
+        {
+            return x -> headersFW
+            .forEach(h -> x.item(y ->
+            {
+                y.representation((byte) 0).name(h.name()).value(h.value());
+            }));
+        }
+
+        private Flyweight.Builder.Visitor injectStaleWhileRevalidate(
+                Consumer<Builder<HttpHeaderFW.Builder, HttpHeaderFW>> mutator,
+                ListFW<HttpHeaderFW> headers,
+                int pollInterval)
+        {
+            pollInterval += NETWORK_ROUND_TRIP_TIME;
+            mutator = mutator.andThen(
+                    x ->  x.item(h -> h.representation((byte) 0).name("cache-control").value("stale-while-revalidate=7"))
+                );
+            return visitHttpBeginEx(mutator);
+
+        }
+
+        private Flyweight.Builder.Visitor visitHttpBeginEx(
+                Consumer<Builder<HttpHeaderFW.Builder, HttpHeaderFW>> headers)
+
+        {
+            return (buffer, offset, limit) ->
+            httpBeginExRW.wrap(buffer, offset, limit)
+                         .headers(headers)
+                         .build()
+                         .sizeof();
         }
     }
 }

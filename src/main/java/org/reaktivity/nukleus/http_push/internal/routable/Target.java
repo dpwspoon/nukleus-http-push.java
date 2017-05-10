@@ -32,6 +32,7 @@ import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.reaktivity.nukleus.Nukleus;
 import org.reaktivity.nukleus.http_push.internal.layouts.StreamsLayout;
 import org.reaktivity.nukleus.http_push.internal.types.Flyweight;
+import org.reaktivity.nukleus.http_push.internal.types.Flyweight.Builder.Visitor;
 import org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW.Builder;
@@ -133,13 +134,27 @@ public final class Target implements Nukleus
         long targetId,
         long targetRef,
         long correlationId,
-        OctetsFW extension)
+        Consumer<OctetsFW.Builder> extensions)
     {
         BeginFW begin = beginRW.wrap(writeBuffer, 0, writeBuffer.capacity())
                 .streamId(targetId)
                 .referenceId(targetRef)
                 .correlationId(correlationId)
-                .extension(e -> e.set(extension))
+                .extension(extensions)
+                .build();
+        streamsBuffer.write(begin.typeId(), begin.buffer(), begin.offset(), begin.sizeof());
+    }
+    public void doHttpBegin(
+            long targetId,
+            long targetRef,
+            long correlationId,
+            Visitor injectHeaders)
+    {
+        BeginFW begin = beginRW.wrap(writeBuffer, 0, writeBuffer.capacity())
+                .streamId(targetId)
+                .referenceId(targetRef)
+                .correlationId(correlationId)
+                .extension(e -> e.set(injectHeaders))
                 .build();
         streamsBuffer.write(begin.typeId(), begin.buffer(), begin.offset(), begin.sizeof());
     }
@@ -170,40 +185,42 @@ public final class Target implements Nukleus
 
     public void doH2PushPromise(
         long targetId,
-        ListFW<HttpHeaderFW> headersFW,
+        ListFW<HttpHeaderFW> headers,
         Consumer<ListFW.Builder<HttpHeaderFW.Builder, HttpHeaderFW>> mutator)
     {
 
         DataFW data = dataRW.wrap(writeBuffer, 0, writeBuffer.capacity())
             .streamId(targetId)
             .payload(e -> e.reset())
-            .extension(e -> e.set(injectSyncHeaders(mutator, headersFW)))
+            .extension(e -> e.set(injectSyncHeaders(mutator, headers)))
             .build();
 
         streamsBuffer.write(data.typeId(), data.buffer(), data.offset(), data.sizeof());
     }
 
+    // TODO, logic should probably be in TargetOutputEstablish (as in HTTP Begin) (or that should be here)
     private Flyweight.Builder.Visitor injectSyncHeaders(
-            Consumer<Builder<HttpHeaderFW.Builder, HttpHeaderFW>> headers, ListFW<HttpHeaderFW> headersFW)
+            Consumer<Builder<HttpHeaderFW.Builder, HttpHeaderFW>> mutator,
+            ListFW<HttpHeaderFW> headers)
     {
-        if(headersFW.anyMatch(INJECTED_DEFAULT_HEADER) || headersFW.anyMatch(INJECTED_HEADER_AND_NO_CACHE))
+        if(headers.anyMatch(INJECTED_DEFAULT_HEADER) || headers.anyMatch(INJECTED_HEADER_AND_NO_CACHE))
         {
             // Already injected, NOOP
         }
-        else if(headersFW.anyMatch(NO_CACHE_CACHE_CONTROL))
+        else if(headers.anyMatch(NO_CACHE_CACHE_CONTROL))
         {
             // INJECT HEADER
-            headers = headers.andThen(
+            mutator = mutator.andThen(
                 x ->  x.item(h -> h.representation((byte) 0).name(INJECTED_HEADER_NAME).value(INJECTED_HEADER_DEFAULT_VALUE))
             );
         }
         else
         {
             // INJECT HEADER AND NO-CACHE
-            headers = headers.andThen(
+            mutator = mutator.andThen(
                 x ->  x.item(h -> h.representation((byte) 0).name(INJECTED_HEADER_NAME).value(INJECTED_HEADER_AND_NO_CACHE_VALUE))
             );
-            if(headersFW.anyMatch(h -> "cache-control".equals(h.name().asString())))
+            if(headers.anyMatch(h -> "cache-control".equals(h.name().asString())))
             {
                 // append no cache to existing cache-control
                 System.out.println("TODO");
@@ -211,17 +228,17 @@ public final class Target implements Nukleus
             }
             else
             {
-                headers = headers.andThen(
+                mutator = mutator.andThen(
                         x ->  x.item(h -> h.representation((byte) 0).name("cache-control").value("no-cache"))
                     );
             }
         }
-        return visitHttpBeginEx(headers, headersFW);
+        return visitHttpBeginEx(mutator);
 
     }
 
     private Flyweight.Builder.Visitor visitHttpBeginEx(
-            Consumer<Builder<HttpHeaderFW.Builder, HttpHeaderFW>> headers, ListFW<HttpHeaderFW> headersFW)
+            Consumer<Builder<HttpHeaderFW.Builder, HttpHeaderFW>> headers)
 
     {
         return (buffer, offset, limit) ->
