@@ -31,11 +31,11 @@ import org.reaktivity.reaktor.test.NukleusRule;
  * RFC-6455, section 4.1 "Client-Side Requirements" RFC-6455, section 4.2
  * "Server-Side Requirements"
  */
-public class OpeningHandshakeIT
+public class OpeningIT
 {
     private final K3poRule k3po = new K3poRule()
         .addScriptRoot("route", "org/reaktivity/specification/nukleus/http_push/control/route")
-        .addScriptRoot("streams", "org/reaktivity/specification/nukleus/http_push/streams/opening");
+        .addScriptRoot("streams", "org/reaktivity/specification/nukleus/http_push/streams/proxy/");
 
     private final TestRule timeout = new DisableOnDebug(new Timeout(5, SECONDS));
 
@@ -55,26 +55,36 @@ public class OpeningHandshakeIT
     @Test
     @Specification({
         "${route}/input/new/controller",
-        "${streams}/connection.established/server/source",
-        "${streams}/connection.established/server/target" })
+        "${streams}/opening/accept/client",
+        "${streams}/opening/connect/server" })
     public void shouldEstablishConnection() throws Exception
     {
         k3po.start();
         k3po.awaitBarrier("ROUTED_INPUT");
-        k3po.notifyBarrier("ROUTED_OUTPUT");
         k3po.finish();
     }
 
     @Test
     @Specification({
         "${route}/input/new/controller",
-        "${streams}/sync.cacheable.url/server/source",
-        "${streams}/sync.cacheable.url/server/target" })
-    public void shouldSyncCacheableResults() throws Exception
+        "${streams}/inject.push.promise/accept/client",
+        "${streams}/inject.push.promise/connect/server" })
+    public void shouldInjectPushPromise() throws Exception
     {
         k3po.start();
         k3po.awaitBarrier("ROUTED_INPUT");
-        k3po.notifyBarrier("ROUTED_OUTPUT");
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/input/new/controller",
+        "${streams}/strip.injected.headers/accept/client",
+        "${streams}/strip.injected.headers/connect/server" })
+    public void shouldStripInjectPushPromise() throws Exception
+    {
+        k3po.start();
+        k3po.awaitBarrier("ROUTED_INPUT");
         k3po.finish();
     }
 
