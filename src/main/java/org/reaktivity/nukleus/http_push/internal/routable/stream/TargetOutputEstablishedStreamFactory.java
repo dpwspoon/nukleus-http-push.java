@@ -212,25 +212,10 @@ public final class TargetOutputEstablishedStreamFactory
 
                 final OctetsFW extension = beginRO.extension();
                 final HttpBeginExFW httpBeginEx = extension.get(httpBeginExRO::wrap);
-                // TODO, want match once
-                httpBeginEx.headers().forEach(header ->
-                {
-                    final String name = header.name().asString();
-                    final String value = header.value().asString();
-                    if ("cache-control".equalsIgnoreCase(name))
-                    {
-                        // TODO, do I need flyweight?? else a real matcher
-                        if(value.contains("no-cache"))
-                        {
-//                            TODO 304 round trip
-                        }
-                    }
-                });
 
                 int slabIndex = correlation.slabIndex();
                 if (slabIndex != NO_SLOT)
                 {
-                    // TODO simplify if else logic
                     MutableDirectBuffer savedRequest = correlation.slab().buffer(slabIndex);
                     headersFW.wrap(savedRequest, 0, correlation.slabSlotLimit());
                     boolean sendUpdateOnChange = headersFW.anyMatch(IS_POLL_HEADER);
@@ -239,8 +224,6 @@ public final class TargetOutputEstablishedStreamFactory
                         Consumer<Builder<org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW.Builder, HttpHeaderFW>>
                             extensions = headersToExtensions(headersFW);
 
-                        // TODO could occur twice, really want firstInstance or something,
-                        // but guaranteed to happen once cause of above
                          headersFW.forEach(h ->
                          {
                             if(POLL_HEADER_NAME.equals(h.name().asString()))
@@ -248,9 +231,11 @@ public final class TargetOutputEstablishedStreamFactory
                                 this.pollInterval = Integer.parseInt(h.value().asString());
                             }
                         });
+
                         headersFW.wrap(extension.buffer(), extension.offset(), extension.limit());
                         Visitor injectStaleWhileRevalidate = injectStaleWhileRevalidate(extensions,
                                 httpBeginEx.headers(), pollInterval);
+
                         newTarget.doHttpBegin(newTargetId, 0L, sourceCorrelationId, injectStaleWhileRevalidate);
 
                         headersFW.wrap(savedRequest, 0, correlation.slabSlotLimit());
@@ -268,7 +253,6 @@ public final class TargetOutputEstablishedStreamFactory
                 }
 
                 newTarget.addThrottle(newTargetId, this::handleThrottle);
-                source.doWindow(newSourceId, 8 * 1024);
 
                 this.sourceId = newSourceId;
                 this.target = newTarget;
@@ -365,7 +349,6 @@ public final class TargetOutputEstablishedStreamFactory
                     x ->  x.item(h -> h.representation((byte) 0).name("cache-control").value("stale-while-revalidate=7"))
                 );
             return visitHttpBeginEx(mutator);
-
         }
 
         private Flyweight.Builder.Visitor visitHttpBeginEx(

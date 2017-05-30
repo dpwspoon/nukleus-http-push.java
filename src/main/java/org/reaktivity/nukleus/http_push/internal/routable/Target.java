@@ -198,7 +198,6 @@ public final class Target implements Nukleus
         streamsBuffer.write(data.typeId(), data.buffer(), data.offset(), data.sizeof());
     }
 
-    // TODO, logic should probably be in TargetOutputEstablish (as in HTTP Begin) (or that should be here)
     private Flyweight.Builder.Visitor injectSyncHeaders(
             Consumer<Builder<HttpHeaderFW.Builder, HttpHeaderFW>> mutator,
             ListFW<HttpHeaderFW> headers)
@@ -220,18 +219,9 @@ public final class Target implements Nukleus
             mutator = mutator.andThen(
                 x ->  x.item(h -> h.representation((byte) 0).name(INJECTED_HEADER_NAME).value(INJECTED_HEADER_AND_NO_CACHE_VALUE))
             );
-            if(headers.anyMatch(h -> "cache-control".equals(h.name().asString())))
-            {
-                // append no cache to existing cache-control
-                System.out.println("TODO");
-                throw new RuntimeException("TODO NOT IMPLEMENTED");
-            }
-            else
-            {
-                mutator = mutator.andThen(
-                        x ->  x.item(h -> h.representation((byte) 0).name("cache-control").value("no-cache"))
-                    );
-            }
+            mutator = mutator.andThen(
+                    x ->  x.item(h -> h.representation((byte) 0).name("cache-control").value("no-cache"))
+            );
         }
         return visitHttpBeginEx(mutator);
 

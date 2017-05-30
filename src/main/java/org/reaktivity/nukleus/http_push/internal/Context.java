@@ -41,8 +41,8 @@ import org.reaktivity.nukleus.http_push.internal.layouts.ControlLayout;
 
 public class Context implements Closeable
 {
-    private static final String MEMORY_FOR_REPEAT_REQUESTS = "nukleus.http.push.memory.for.repeat.requests";
-    private static final String MAXIMUM_REQUEST_SIZE = "nukleus.http.push.maximum.request.size";
+    private static final String MEMORY_FOR_REPEAT_REQUESTS = "nukleus.http_push.memory.for.repeat.requests";
+    private static final String MAXIMUM_REQUEST_SIZE = "nukleus.http_push.maximum.request.size";
 
     private final ControlLayout.Builder controlRW = new ControlLayout.Builder();
 

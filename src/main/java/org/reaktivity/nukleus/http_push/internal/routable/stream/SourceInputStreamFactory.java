@@ -260,8 +260,7 @@ public final class SourceInputStreamFactory
                     int slotIndex = slab.acquire(streamId);
                     if(slotIndex == NO_SLOT)
                     {
-                        System.out.println("TODO");
-                        throw new RuntimeException("TODO");
+                        source.doReset(newSourceId);
                     }
                     final MutableDirectBuffer store = slab.buffer(slotIndex);
                     storeHeadersForTargetEstablish(headers, store);
@@ -324,9 +323,7 @@ public final class SourceInputStreamFactory
                 }
                 else
                 {
-                    // figure out how to remove just cache-control: no-cache and not all directives
-                    System.out.println("TODO");
-                    throw new RuntimeException("TODO");
+                    // TODO figure out how to remove just cache-control: no-cache and not all directives
                 }
             }
 
@@ -355,7 +352,7 @@ public final class SourceInputStreamFactory
 
             final OctetsFW payload = dataRO.payload();
 
-            processPayload(payload);
+            processPayload(payload, dataRO.streamId());
         }
 
         private void processEnd(
@@ -373,12 +370,10 @@ public final class SourceInputStreamFactory
         }
 
         private int processPayload(
-            final OctetsFW httpPayload)
+            final OctetsFW httpPayload, long streamId)
         {
-            // DPW TODO
-//            final DirectBuffer buffer = httpPayload.buffer();
-//            final int offset = httpPayload.offset();
-//            final int limit = httpPayload.limit();
+            // TODO forward requests with data?
+            source.doReset(streamId);
             return 0;
         }
 

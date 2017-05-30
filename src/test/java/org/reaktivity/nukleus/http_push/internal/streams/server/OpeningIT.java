@@ -60,7 +60,6 @@ public class OpeningIT
     public void shouldEstablishConnection() throws Exception
     {
         k3po.start();
-        k3po.awaitBarrier("ROUTED_INPUT");
         k3po.finish();
     }
 
@@ -72,7 +71,6 @@ public class OpeningIT
     public void shouldInjectPushPromise() throws Exception
     {
         k3po.start();
-        k3po.awaitBarrier("ROUTED_INPUT");
         k3po.finish();
     }
 
@@ -84,7 +82,6 @@ public class OpeningIT
     public void shouldStripInjectPushPromise() throws Exception
     {
         k3po.start();
-        k3po.awaitBarrier("ROUTED_INPUT");
         k3po.finish();
     }
 
