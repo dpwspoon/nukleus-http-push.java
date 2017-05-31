@@ -44,6 +44,7 @@ public class OpeningIT
         .commandBufferCapacity(1024)
         .responseBufferCapacity(1024)
         .counterValuesBufferCapacity(1024)
+        // streams() are still needed due to: https://github.com/k3po/k3po/issues/437
         .streams("http-push", "source")
         .streams("target", "http-push#source")
         .streams("http-push", "target")

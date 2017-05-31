@@ -28,18 +28,16 @@ import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.MessageHandler;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.reaktivity.nukleus.Nukleus;
+import org.reaktivity.nukleus.http_push.internal.layouts.StreamsLayout;
+import org.reaktivity.nukleus.http_push.internal.routable.stream.Slab;
+import org.reaktivity.nukleus.http_push.internal.routable.stream.SourceInputStreamFactory;
+import org.reaktivity.nukleus.http_push.internal.routable.stream.TargetOutputEstablishedStreamFactory;
+import org.reaktivity.nukleus.http_push.internal.router.Correlation;
+import org.reaktivity.nukleus.http_push.internal.router.RouteKind;
 import org.reaktivity.nukleus.http_push.internal.types.stream.BeginFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.FrameFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.ResetFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.WindowFW;
-import org.reaktivity.nukleus.http_push.internal.layouts.StreamsLayout;
-import org.reaktivity.nukleus.http_push.internal.routable.stream.Slab;
-import org.reaktivity.nukleus.http_push.internal.routable.stream.SourceInputStreamFactory;
-import org.reaktivity.nukleus.http_push.internal.routable.stream.SourceOutputStreamFactory;
-import org.reaktivity.nukleus.http_push.internal.routable.stream.TargetInputEstablishedStreamFactory;
-import org.reaktivity.nukleus.http_push.internal.routable.stream.TargetOutputEstablishedStreamFactory;
-import org.reaktivity.nukleus.http_push.internal.router.Correlation;
-import org.reaktivity.nukleus.http_push.internal.router.RouteKind;
 import org.reaktivity.nukleus.http_push.internal.util.function.LongObjectBiConsumer;
 
 public final class Source implements Nukleus
@@ -89,10 +87,6 @@ public final class Source implements Nukleus
                 new SourceInputStreamFactory(this, supplyRoutes, supplyTargetId, correlateNew, slab, schedule)::newStream);
         this.streamFactories.put(RouteKind.OUTPUT_ESTABLISHED,
                 new TargetOutputEstablishedStreamFactory(this, supplyTarget, supplyTargetId, correlateEstablished)::newStream);
-        this.streamFactories.put(RouteKind.OUTPUT,
-                new SourceOutputStreamFactory(this, supplyRoutes, supplyTargetId, correlateNew)::newStream);
-        this.streamFactories.put(RouteKind.INPUT_ESTABLISHED,
-                new TargetInputEstablishedStreamFactory(this, supplyRoutes, supplyTargetId, correlateEstablished)::newStream);
 
         this.lookupEstablished = lookupEstablished;
     }

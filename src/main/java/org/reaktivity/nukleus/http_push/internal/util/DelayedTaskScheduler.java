@@ -18,6 +18,7 @@ package org.reaktivity.nukleus.http_push.internal.util;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
 
 import org.agrona.collections.Long2ObjectHashMap;
 
@@ -32,7 +33,7 @@ public class DelayedTaskScheduler
         this.scheduledTimes = new TreeSet<>();
     }
 
-    public void schedule(Long time, Runnable task)
+    public void schedule(long time, Runnable task)
     {
         if(this.scheduledTimes.add(time))
         {
@@ -40,14 +41,7 @@ public class DelayedTaskScheduler
         }
         else
         {
-            this.taskLookup.merge(time, task, (t1, t2) ->
-            {
-                return () ->
-                {
-                    t1.run();
-                    t2.run();
-                };
-            });
+            this.taskLookup.merge(time, task, mergeTasks);
         }
     }
 
@@ -66,4 +60,13 @@ public class DelayedTaskScheduler
             taskLookup.remove(s).run();
         }
     }
+
+    private static BiFunction<? super Runnable, ? super Runnable, ? extends Runnable> mergeTasks = (t1, t2) ->
+    {
+        return () ->
+        {
+            t1.run();
+            t2.run();
+        };
+    };
 }
