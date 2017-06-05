@@ -8,6 +8,7 @@
   <artifactId>nukleus-http-push</artifactId>
   <version>develop-SNAPSHOT</version>
   <name>HTTP Push Nukleus Implementation</name>
+  <description>HTTP Push Nukleus Implementation</description>
   <url>https://github.com/reaktivity/nukleus-http-push.java</url>
 
   <licenses>
