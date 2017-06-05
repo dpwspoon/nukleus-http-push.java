@@ -24,7 +24,7 @@ import org.reaktivity.nukleus.http_push.internal.watcher.Watcher;
 
 public final class HttpPushNukleus extends Nukleus.Composite
 {
-    static final String NAME = "http-push";
+    public static final String NAME = "http-push";
 
     private final Closeable cleanup;
 

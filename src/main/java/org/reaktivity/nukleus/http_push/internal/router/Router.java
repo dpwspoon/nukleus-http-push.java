@@ -27,7 +27,6 @@ import org.agrona.concurrent.status.AtomicCounter;
 import org.reaktivity.nukleus.Nukleus;
 import org.reaktivity.nukleus.Reaktive;
 import org.reaktivity.nukleus.http_push.internal.types.control.Role;
-import org.reaktivity.nukleus.http_push.internal.types.control.State;
 import org.reaktivity.nukleus.http_push.internal.Context;
 import org.reaktivity.nukleus.http_push.internal.conductor.Conductor;
 import org.reaktivity.nukleus.http_push.internal.routable.Routable;
@@ -70,13 +69,12 @@ public class Router extends Nukleus.Composite
     public void doRoute(
         long correlationId,
         Role role,
-        State state,
         String sourceName,
         long sourceRef,
         String targetName,
         long targetRef)
     {
-        final RouteKind routeKind = RouteKind.valueOf(role, state);
+        final RouteKind routeKind = RouteKind.valueOf(role);
 
         if (sourceRef == 0L)
         {
@@ -97,7 +95,6 @@ public class Router extends Nukleus.Composite
     public void doUnroute(
         long correlationId,
         Role role,
-        State state,
         String sourceName,
         long sourceRef,
         String targetName,

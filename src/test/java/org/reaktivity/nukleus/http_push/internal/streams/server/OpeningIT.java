@@ -27,10 +27,6 @@ import org.kaazing.k3po.junit.annotation.Specification;
 import org.kaazing.k3po.junit.rules.K3poRule;
 import org.reaktivity.reaktor.test.NukleusRule;
 
-/**
- * RFC-6455, section 4.1 "Client-Side Requirements" RFC-6455, section 4.2
- * "Server-Side Requirements"
- */
 public class OpeningIT
 {
     private final K3poRule k3po = new K3poRule()
@@ -55,7 +51,7 @@ public class OpeningIT
 
     @Test
     @Specification({
-        "${route}/input/new/controller",
+        "${route}/proxy/controller",
         "${streams}/opening/accept/client",
         "${streams}/opening/connect/server" })
     public void shouldEstablishConnection() throws Exception
@@ -66,7 +62,7 @@ public class OpeningIT
 
     @Test
     @Specification({
-        "${route}/input/new/controller",
+        "${route}/proxy/controller",
         "${streams}/inject.push.promise/accept/client",
         "${streams}/inject.push.promise/connect/server" })
     public void shouldInjectPushPromise() throws Exception
@@ -77,7 +73,7 @@ public class OpeningIT
 
     @Test
     @Specification({
-        "${route}/input/new/controller",
+        "${route}/proxy/controller",
         "${streams}/strip.injected.headers/accept/client",
         "${streams}/strip.injected.headers/connect/server" })
     public void shouldStripInjectPushPromise() throws Exception

@@ -46,114 +46,19 @@ public class ControlIT
 
     @Test
     @Specification({
-        "${route}/input/none/controller"
+        "${route}/proxy/controller"
     })
-    public void shouldRouteInputNone() throws Exception
+    public void shouldRouteProxy() throws Exception
     {
         k3po.finish();
     }
 
     @Test
     @Specification({
-        "${route}/input/new/controller"
+        "${route}/proxy/controller",
+        "${unroute}/proxy/controller"
     })
-    public void shouldRouteInputNew() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/input/established/controller"
-    })
-    public void shouldRouteInputEstablished() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/output/none/controller"
-    })
-    public void shouldRouteOutputNone() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/output/new/controller"
-    })
-    public void shouldRouteOutputNew() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/output/established/controller"
-    })
-    public void shouldRouteOutputEstablished() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/input/none/controller",
-        "${unroute}/input/none/controller"
-    })
-    public void shouldUnrouteInputNone() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/input/new/controller",
-        "${unroute}/input/new/controller"
-    })
-    public void shouldUnrouteInputNew() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/input/established/controller",
-        "${unroute}/input/established/controller"
-    })
-    public void shouldUnrouteInputEstablished() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/output/none/controller",
-        "${unroute}/output/none/controller"
-    })
-    public void shouldUnrouteOutputNone() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/output/new/controller",
-        "${unroute}/output/new/controller"
-    })
-    public void shouldUnrouteOutputNew() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/output/established/controller",
-        "${unroute}/output/established/controller"
-    })
-    public void shouldUnrouteOutputEstablished() throws Exception
+    public void shouldUnrouteProxy() throws Exception
     {
         k3po.finish();
     }

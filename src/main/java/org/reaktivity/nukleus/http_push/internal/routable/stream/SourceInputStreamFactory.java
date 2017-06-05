@@ -238,7 +238,7 @@ public final class SourceInputStreamFactory
             beginRO.wrap(buffer, index, index + length);
 
             final long newSourceId = beginRO.streamId();
-            final long sourceRef = beginRO.referenceId();
+            final long sourceRef = beginRO.sourceRef();
             final long correlationId = beginRO.correlationId();
 
             {

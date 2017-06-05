@@ -49,16 +49,16 @@ public class ControllerIT
 
     @Test
     @Specification({
-        "${route}/input/new/nukleus"
+        "${route}/proxy/nukleus"
     })
-    public void shouldRouteInputNew() throws Exception
+    public void shouldRouteProxy() throws Exception
     {
         long targetRef = new Random().nextLong();
 
         k3po.start();
 
         controller.controller(HttpPushController.class)
-                  .routeInputNew("source", 0L, "target", targetRef)
+                  .routeProxy("source", 0L, "target", targetRef)
                   .get();
 
         k3po.finish();
@@ -66,138 +66,23 @@ public class ControllerIT
 
     @Test
     @Specification({
-        "${route}/output/new/nukleus"
+        "${route}/proxy/nukleus",
+        "${unroute}/proxy/nukleus"
     })
-    public void shouldRouteOutputNew() throws Exception
-    {
-        long targetRef = new Random().nextLong();
-
-        k3po.start();
-
-        controller.controller(HttpPushController.class)
-                  .routeOutputNew("source", 0L, "target", targetRef)
-                  .get();
-
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/output/established/nukleus"
-    })
-    public void shouldRouteOutputEstablished() throws Exception
-    {
-        k3po.start();
-
-        controller.controller(HttpPushController.class)
-                  .routeOutputEstablished("target", 0L, "source", 0L)
-                  .get();
-
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/input/established/nukleus"
-    })
-    public void shouldRouteInputEstablished() throws Exception
-    {
-        k3po.start();
-
-        controller.controller(HttpPushController.class)
-                  .routeInputEstablished("target", 0L, "source", 0L)
-                  .get();
-
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/input/new/nukleus",
-        "${unroute}/input/new/nukleus"
-    })
-    public void shouldUnrouteInputNew() throws Exception
+    public void shouldUnrouteProxy() throws Exception
     {
         long targetRef = new Random().nextLong();
 
         k3po.start();
 
         long sourceRef = controller.controller(HttpPushController.class)
-                  .routeInputNew("source", 0L, "target", targetRef)
+                  .routeProxy("source", 0L, "target", targetRef)
                   .get();
 
-        k3po.notifyBarrier("ROUTED_INPUT");
+        k3po.notifyBarrier("ROUTED_PROXY");
 
         controller.controller(HttpPushController.class)
-                  .unrouteInputNew("source", sourceRef, "target", targetRef)
-                  .get();
-
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/output/new/nukleus",
-        "${unroute}/output/new/nukleus"
-    })
-    public void shouldUnrouteOutputNew() throws Exception
-    {
-        long targetRef = new Random().nextLong();
-
-        k3po.start();
-
-        long sourceRef = controller.controller(HttpPushController.class)
-                  .routeOutputNew("source", 0L, "target", targetRef)
-                  .get();
-
-        k3po.notifyBarrier("ROUTED_OUTPUT");
-
-        controller.controller(HttpPushController.class)
-                  .unrouteOutputNew("source", sourceRef, "target", targetRef)
-                  .get();
-
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/output/established/nukleus",
-        "${unroute}/output/established/nukleus"
-    })
-    public void shouldUnrouteOutputEstablished() throws Exception
-    {
-        k3po.start();
-
-        long targetRef = controller.controller(HttpPushController.class)
-                  .routeOutputEstablished("target", 0L, "source", 0L)
-                  .get();
-
-        k3po.notifyBarrier("ROUTED_OUTPUT");
-
-        controller.controller(HttpPushController.class)
-                  .unrouteOutputEstablished("target", targetRef, "source", 0L)
-                  .get();
-
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/input/established/nukleus",
-        "${unroute}/input/established/nukleus"
-    })
-    public void shouldUnrouteInputEstablished() throws Exception
-    {
-        k3po.start();
-
-        long targetRef  = controller.controller(HttpPushController.class)
-                  .routeInputEstablished("target", 0L, "source", 0L)
-                  .get();
-
-        k3po.notifyBarrier("ROUTED_INPUT");
-
-        controller.controller(HttpPushController.class)
-                  .unrouteInputEstablished("target", targetRef, "source", 0L)
+                  .unrouteProxy("source", sourceRef, "target", targetRef)
                   .get();
 
         k3po.finish();

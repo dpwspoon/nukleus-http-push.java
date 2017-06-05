@@ -58,6 +58,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.reaktivity.nukleus.Configuration;
 import org.reaktivity.nukleus.http_push.internal.HttpPushController;
+import org.reaktivity.nukleus.http_push.internal.HttpPushNukleus;
 import org.reaktivity.nukleus.http_push.internal.HttpPushStreams;
 import org.reaktivity.nukleus.http_push.internal.types.Flyweight;
 import org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW;
@@ -140,7 +141,7 @@ public class HttpPushServerBM
         final HttpPushController controller = reaktor.controller(HttpPushController.class);
 
         this.targetInputRef = random.nextLong();
-        this.sourceInputRef = controller.routeInputNew("source", 0L, "target", targetInputRef).get();
+        this.sourceInputRef = controller.routeProxy("source", 0L, "target", targetInputRef).get();
 
         this.sourceInputStreams = controller.streams("source");
         this.sourceOutputEstStreams = controller.streams("http-push", "target");
@@ -165,7 +166,8 @@ public class HttpPushServerBM
 
         BeginFW begin = beginRW.wrap(writeBuffer, 0, writeBuffer.capacity())
                 .streamId(sourceInputId)
-                .referenceId(sourceInputRef)
+                .source(HttpPushNukleus.NAME)
+                .sourceRef(sourceInputRef)
                 .correlationId(random.nextLong())
                 .build();
 
@@ -206,7 +208,7 @@ public class HttpPushServerBM
     {
         HttpPushController controller = reaktor.controller(HttpPushController.class);
 
-        controller.unrouteInputNew("source", sourceInputRef, "target", targetInputRef).get();
+        controller.unrouteProxy("source", sourceInputRef, "target", targetInputRef).get();
 
         this.sourceInputStreams.close();
         this.sourceInputStreams = null;
