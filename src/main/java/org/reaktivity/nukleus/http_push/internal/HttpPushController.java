@@ -223,16 +223,6 @@ public final class HttpPushController implements Controller
         return new HttpPushStreams(streamsCapacity, throttleCapacity, path, true);
     }
 
-//    private Flyweight.Builder.Visitor visitRouteEx(
-//        String protocol)
-//    {
-//        return (buffer, offset, limit) ->
-//            routeExRW.wrap(buffer, offset, limit)
-//                     .protocol(protocol)
-//                     .build()
-//                     .sizeof();
-//    }
-
     private int handleResponse(
         int msgTypeId,
         DirectBuffer buffer,

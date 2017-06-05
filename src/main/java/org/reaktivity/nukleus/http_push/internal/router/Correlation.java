@@ -19,8 +19,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
 
-import org.reaktivity.nukleus.http_push.internal.routable.stream.Slab;
-
 public class Correlation
 {
     private final long id;
@@ -28,22 +26,19 @@ public class Correlation
     private final RouteKind established;
     private final int slotIndex;
     private final int slabSlotLimit;
-    private final Slab slab;
 
     public Correlation(
         long id,
         String source,
         RouteKind established,
         int slotIndex,
-        int slabSlotLimit,
-        Slab slab)
+        int slabSlotLimit)
     {
         this.id = id;
         this.source = requireNonNull(source, "source");
         this.established = requireNonNull(established, "established");
         this.slotIndex = slotIndex;
         this.slabSlotLimit = slabSlotLimit;
-        this.slab = slab;
     }
 
     public long id()
@@ -69,11 +64,6 @@ public class Correlation
     public int slabSlotLimit()
     {
         return this.slabSlotLimit;
-    }
-
-    public Slab slab()
-    {
-        return this.slab;
     }
 
     @Override

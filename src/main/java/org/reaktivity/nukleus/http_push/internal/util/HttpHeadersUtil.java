@@ -37,7 +37,7 @@ public final class HttpHeadersUtil
     public static final Predicate<HttpHeaderFW> IS_POLL_HEADER =
                     h -> POLL_HEADER_NAME.equals(h.name().asString());
 
-    public static void forAllMatch(ListFW<HttpHeaderFW> headers, Predicate<HttpHeaderFW> predicate,
+    public static void forEachMatch(ListFW<HttpHeaderFW> headers, Predicate<HttpHeaderFW> predicate,
             Consumer<HttpHeaderFW> consumer)
     {
         headers.forEach(header ->

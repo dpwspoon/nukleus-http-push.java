@@ -84,9 +84,9 @@ public final class Source implements Nukleus
 
         this.streamFactories = new EnumMap<>(RouteKind.class);
         this.streamFactories.put(RouteKind.INPUT,
-                new SourceInputStreamFactory(this, supplyRoutes, supplyTargetId, correlateNew, slab, schedule)::newStream);
+            new SourceInputStreamFactory(this, supplyRoutes, supplyTargetId, correlateNew, slab, schedule)::newStream);
         this.streamFactories.put(RouteKind.OUTPUT_ESTABLISHED,
-                new TargetOutputEstablishedStreamFactory(this, supplyTarget, supplyTargetId, correlateEstablished)::newStream);
+            new TargetOutputEstablishedStreamFactory(this, supplyTarget, supplyTargetId, correlateEstablished, slab)::newStream);
 
         this.lookupEstablished = lookupEstablished;
     }

@@ -20,7 +20,7 @@ import static org.reaktivity.nukleus.http_push.internal.router.RouteKind.OUTPUT_
 import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.INJECTED_HEADER_AND_NO_CACHE;
 import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.INJECTED_HEADER_NAME;
 import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.IS_POLL_HEADER;
-import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.forAllMatch;
+import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.forEachMatch;
 
 //import java.util.LinkedHashMap;
 import java.util.List;
@@ -267,7 +267,7 @@ public final class SourceInputStreamFactory
 
                     if(headers.anyMatch(IS_POLL_HEADER) && headers.anyMatch(IS_INJECTED_HEADER))
                     {
-                        forAllMatch(headers, IS_POLL_HEADER, h ->
+                        forEachMatch(headers, IS_POLL_HEADER, h ->
                         {
                             this.pollInterval = Integer.parseInt(h.value().asString());
                         });
@@ -280,7 +280,7 @@ public final class SourceInputStreamFactory
                     }
 
                     final Correlation correlation = new Correlation(correlationId, source.routableName(),
-                            OUTPUT_ESTABLISHED, slotIndex, this.storedRequestSize, slab);
+                            OUTPUT_ESTABLISHED, slotIndex, this.storedRequestSize);
                     correlateNew.accept(targetCorrelationId, correlation);
 
                     this.sourceId = newSourceId;
@@ -298,7 +298,7 @@ public final class SourceInputStreamFactory
 
         private void storeHeadersForTargetEstablish(ListFW<HttpHeaderFW> headers, final MutableDirectBuffer store)
         {
-            HttpHeadersUtil.forAllMatch(headers, b -> true, h ->
+            HttpHeadersUtil.forEachMatch(headers, b -> true, h ->
             {
                 store.putBytes(storedRequestSize, h.buffer(), h.offset(), h.sizeof());
                 this.storedRequestSize += h.sizeof();
@@ -328,7 +328,7 @@ public final class SourceInputStreamFactory
             }
 
 
-            HttpHeadersUtil.forAllMatch(headers, stripInjected.negate(), h ->
+            HttpHeadersUtil.forEachMatch(headers, stripInjected.negate(), h ->
             {
                 store.putBytes(pollExtensionSize, h.buffer(), h.offset(), h.sizeof());
                 pollExtensionSize += h.sizeof();

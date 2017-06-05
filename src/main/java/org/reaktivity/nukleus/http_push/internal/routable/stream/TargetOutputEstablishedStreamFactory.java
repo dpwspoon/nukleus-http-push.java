@@ -63,17 +63,20 @@ public final class TargetOutputEstablishedStreamFactory
     private final Function<String, Target> supplyTarget;
     private final LongSupplier supplyStreamId;
     private final LongFunction<Correlation> correlateEstablished;
+    private final Slab slab;
 
     public TargetOutputEstablishedStreamFactory(
         Source source,
         Function<String, Target> supplyTarget,
         LongSupplier supplyStreamId,
-        LongFunction<Correlation> correlateEstablished)
+        LongFunction<Correlation> correlateEstablished,
+        Slab slab)
     {
         this.source = source;
         this.supplyTarget = supplyTarget;
         this.supplyStreamId = supplyStreamId;
         this.correlateEstablished = correlateEstablished;
+        this.slab = slab;
     }
 
     public MessageHandler newStream()
@@ -216,7 +219,7 @@ public final class TargetOutputEstablishedStreamFactory
                 int slabIndex = correlation.slabIndex();
                 if (slabIndex != NO_SLOT)
                 {
-                    MutableDirectBuffer savedRequest = correlation.slab().buffer(slabIndex);
+                    MutableDirectBuffer savedRequest = slab.buffer(slabIndex);
                     headersFW.wrap(savedRequest, 0, correlation.slabSlotLimit());
                     boolean sendUpdateOnChange = headersFW.anyMatch(IS_POLL_HEADER);
                     if(sendUpdateOnChange)
@@ -245,7 +248,7 @@ public final class TargetOutputEstablishedStreamFactory
                     {
                         newTarget.doHttpBegin(newTargetId, 0L, sourceCorrelationId, e -> e.set(extension));
                     }
-                    correlation.slab().release(slabIndex);
+                    slab.release(slabIndex);
                 }
                 else
                 {
