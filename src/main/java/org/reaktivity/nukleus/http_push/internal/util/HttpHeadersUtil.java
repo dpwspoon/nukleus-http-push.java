@@ -27,7 +27,7 @@ public final class HttpHeadersUtil
 {
 
     public static final String INJECTED_HEADER_NAME = "x-poll-injected";
-    public static final String INJECTED_HEADER_DEFAULT_VALUE = "http-push-sync";
+    public static final String INJECTED_HEADER_DEFAULT_VALUE = "http-push-sync, x-http-cache-sync";
     public static final String INJECTED_HEADER_AND_NO_CACHE_VALUE = INJECTED_HEADER_DEFAULT_VALUE + ", no-cache";
     public static final String POLL_HEADER_NAME = "x-poll-interval";
 

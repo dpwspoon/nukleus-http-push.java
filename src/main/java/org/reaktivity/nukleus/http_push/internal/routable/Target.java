@@ -220,6 +220,9 @@ public final class Target implements Nukleus
             mutator = mutator.andThen(
                 x ->  x.item(h -> h.representation((byte) 0).name(INJECTED_HEADER_NAME).value(INJECTED_HEADER_DEFAULT_VALUE))
             );
+            mutator = mutator.andThen(
+                x ->  x.item(h -> h.representation((byte) 0).name("x-http-cache-sync").value("always"))
+            );
         }
         else
         {
@@ -229,6 +232,9 @@ public final class Target implements Nukleus
             );
             mutator = mutator.andThen(
                     x ->  x.item(h -> h.representation((byte) 0).name("cache-control").value("no-cache"))
+            );
+            mutator = mutator.andThen(
+                x ->  x.item(h -> h.representation((byte) 0).name("x-http-cache-sync").value("always"))
             );
         }
         return visitHttpBeginEx(mutator);
