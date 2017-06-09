@@ -17,10 +17,10 @@
 package org.reaktivity.nukleus.http_push.internal;
 
 import org.reaktivity.nukleus.Configuration;
-import org.reaktivity.nukleus.Controller;
+import org.reaktivity.nukleus.ControllerBuilder;
 import org.reaktivity.nukleus.ControllerFactorySpi;
 
-public class HttpPushControllerFactorySpi implements ControllerFactorySpi
+public class HttpPushControllerFactorySpi implements ControllerFactorySpi<HttpPushController>
 {
 
     @Override
@@ -30,21 +30,20 @@ public class HttpPushControllerFactorySpi implements ControllerFactorySpi
     }
 
     @Override
-    public Class<? extends Controller> kind()
+    public Class<HttpPushController> kind()
     {
         return HttpPushController.class;
     }
 
     @Override
-    public <T extends Controller> T create(
-            Class<T> kind,
-            Configuration config)
+    public HttpPushController create(
+        Configuration config,
+        ControllerBuilder<HttpPushController> builder)
     {
         Context context = new Context();
         context.readonly(true)
             .conclude(config);
 
-        return kind.cast(new HttpPushController(context));
+        return new HttpPushController(context);
     }
-
 }
