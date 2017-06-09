@@ -25,14 +25,12 @@ import java.util.regex.Pattern;
 import org.agrona.collections.Long2ObjectHashMap;
 import org.agrona.concurrent.status.AtomicCounter;
 import org.reaktivity.nukleus.Nukleus;
-import org.reaktivity.nukleus.Reaktive;
-import org.reaktivity.nukleus.http_push.internal.types.control.Role;
 import org.reaktivity.nukleus.http_push.internal.Context;
 import org.reaktivity.nukleus.http_push.internal.conductor.Conductor;
 import org.reaktivity.nukleus.http_push.internal.routable.Routable;
 import org.reaktivity.nukleus.http_push.internal.routable.stream.Slab;
+import org.reaktivity.nukleus.http_push.internal.types.control.Role;
 
-@Reaktive
 public class Router extends Nukleus.Composite
 {
 

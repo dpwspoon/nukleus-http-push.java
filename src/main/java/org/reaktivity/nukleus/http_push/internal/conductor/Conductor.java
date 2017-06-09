@@ -21,17 +21,15 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.broadcast.BroadcastTransmitter;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 import org.reaktivity.nukleus.Nukleus;
-import org.reaktivity.nukleus.Reaktive;
+import org.reaktivity.nukleus.http_push.internal.Context;
+import org.reaktivity.nukleus.http_push.internal.router.Router;
 import org.reaktivity.nukleus.http_push.internal.types.control.ErrorFW;
 import org.reaktivity.nukleus.http_push.internal.types.control.Role;
 import org.reaktivity.nukleus.http_push.internal.types.control.RouteFW;
 import org.reaktivity.nukleus.http_push.internal.types.control.RoutedFW;
 import org.reaktivity.nukleus.http_push.internal.types.control.UnrouteFW;
 import org.reaktivity.nukleus.http_push.internal.types.control.UnroutedFW;
-import org.reaktivity.nukleus.http_push.internal.Context;
-import org.reaktivity.nukleus.http_push.internal.router.Router;
 
-@Reaktive
 public final class Conductor implements Nukleus
 {
     private final RouteFW routeRO = new RouteFW();

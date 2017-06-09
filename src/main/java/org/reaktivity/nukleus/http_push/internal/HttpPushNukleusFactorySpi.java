@@ -16,6 +16,7 @@
 package org.reaktivity.nukleus.http_push.internal;
 
 import org.reaktivity.nukleus.Configuration;
+import org.reaktivity.nukleus.NukleusBuilder;
 import org.reaktivity.nukleus.NukleusFactorySpi;
 import org.reaktivity.nukleus.http_push.internal.conductor.Conductor;
 import org.reaktivity.nukleus.http_push.internal.router.Router;
@@ -30,7 +31,9 @@ public final class HttpPushNukleusFactorySpi implements NukleusFactorySpi
     }
 
     @Override
-    public HttpPushNukleus create(Configuration config)
+    public HttpPushNukleus create(
+        Configuration config,
+        NukleusBuilder builder)
     {
         Context context = new Context();
         context.conclude(config);
