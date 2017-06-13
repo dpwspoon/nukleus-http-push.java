@@ -15,7 +15,6 @@
  */
 package org.reaktivity.nukleus.http_push.internal.util;
 
-import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
@@ -35,7 +34,7 @@ public class DelayedTaskScheduler
 
     public void schedule(long time, Runnable task)
     {
-        if(this.scheduledTimes.add(time))
+        if (this.scheduledTimes.add(time))
         {
             this.taskLookup.put(time, task);
         }
@@ -47,17 +46,17 @@ public class DelayedTaskScheduler
 
     public void process()
     {
-        long c = System.currentTimeMillis();
-        Iterator<Long> iter = scheduledTimes.iterator();
-        while(iter.hasNext())
+        if (!scheduledTimes.isEmpty())
         {
-            Long s = iter.next();
-            if(s > c)
-            {
-                break;
-            }
-            scheduledTimes.remove(s);
-            taskLookup.remove(s).run();
+            long c = System.currentTimeMillis();
+            SortedSet<Long> past = scheduledTimes.headSet(c);
+            past.stream().forEach(t ->
+                {
+                    Runnable task = taskLookup.remove(t);
+                    task.run();
+                }
+            );
+            scheduledTimes.removeAll(past);
         }
     }
 
