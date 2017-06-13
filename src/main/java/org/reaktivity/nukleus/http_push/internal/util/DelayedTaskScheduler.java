@@ -34,7 +34,7 @@ public class DelayedTaskScheduler
 
     public void schedule(long time, Runnable task)
     {
-        if(this.scheduledTimes.add(time))
+        if (this.scheduledTimes.add(time))
         {
             this.taskLookup.put(time, task);
         }
@@ -46,7 +46,7 @@ public class DelayedTaskScheduler
 
     public void process()
     {
-        if(!scheduledTimes.isEmpty())
+        if (!scheduledTimes.isEmpty())
         {
             long c = System.currentTimeMillis();
             SortedSet<Long> past = scheduledTimes.headSet(c);
