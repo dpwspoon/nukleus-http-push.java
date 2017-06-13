@@ -46,15 +46,18 @@ public class DelayedTaskScheduler
 
     public void process()
     {
-        long c = System.currentTimeMillis();
-        SortedSet<Long> past = scheduledTimes.headSet(c);
-        past.stream().forEach(t ->
-            {
-                Runnable task = taskLookup.remove(t);
-                task.run();
-            }
-        );
-        scheduledTimes.removeAll(past);
+        if(!scheduledTimes.isEmpty())
+        {
+            long c = System.currentTimeMillis();
+            SortedSet<Long> past = scheduledTimes.headSet(c);
+            past.stream().forEach(t ->
+                {
+                    Runnable task = taskLookup.remove(t);
+                    task.run();
+                }
+            );
+            scheduledTimes.removeAll(past);
+        }
     }
 
     private static BiFunction<? super Runnable, ? super Runnable, ? extends Runnable> mergeTasks = (t1, t2) ->
