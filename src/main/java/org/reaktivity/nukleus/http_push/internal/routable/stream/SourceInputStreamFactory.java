@@ -22,9 +22,7 @@ import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.INJ
 import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.IS_POLL_HEADER;
 import static org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil.forEachMatch;
 
-//import java.util.LinkedHashMap;
 import java.util.List;
-//import java.util.Map;
 import java.util.Optional;
 import java.util.function.LongFunction;
 import java.util.function.LongSupplier;
@@ -33,6 +31,10 @@ import java.util.function.Predicate;
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.MessageHandler;
+import org.reaktivity.nukleus.http_push.internal.routable.Route;
+import org.reaktivity.nukleus.http_push.internal.routable.Source;
+import org.reaktivity.nukleus.http_push.internal.routable.Target;
+import org.reaktivity.nukleus.http_push.internal.router.Correlation;
 import org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW;
 import org.reaktivity.nukleus.http_push.internal.types.OctetsFW;
@@ -43,10 +45,6 @@ import org.reaktivity.nukleus.http_push.internal.types.stream.FrameFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.HttpBeginExFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.ResetFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.WindowFW;
-import org.reaktivity.nukleus.http_push.internal.routable.Route;
-import org.reaktivity.nukleus.http_push.internal.routable.Source;
-import org.reaktivity.nukleus.http_push.internal.routable.Target;
-import org.reaktivity.nukleus.http_push.internal.router.Correlation;
 import org.reaktivity.nukleus.http_push.internal.util.HttpHeadersUtil;
 import org.reaktivity.nukleus.http_push.internal.util.function.LongObjectBiConsumer;
 
@@ -55,12 +53,11 @@ public final class SourceInputStreamFactory
     private final FrameFW frameRO = new FrameFW();
 
     private final BeginFW beginRO = new BeginFW();
+    private final HttpBeginExFW httpBeginExRO = new HttpBeginExFW();
     private final DataFW dataRO = new DataFW();
     private final EndFW endRO = new EndFW();
-    private final OctetsFW octetsRO = new OctetsFW();
 
     private final LongObjectBiConsumer<Runnable> scheduler;
-    private final HttpBeginExFW httpBeginExRO = new HttpBeginExFW();
 
     private final WindowFW windowRO = new WindowFW();
     private final ResetFW resetRO = new ResetFW();
@@ -106,7 +103,6 @@ public final class SourceInputStreamFactory
         // these are fields do to effectively final forEach
         private int storedRequestSize = 0;
         private int pollInterval = 0;
-        private int pollExtensionSize = 0;
 
         private SourceInputStream()
         {
@@ -258,34 +254,47 @@ public final class SourceInputStreamFactory
                     final ListFW<HttpHeaderFW> headers = httpBeginExRO.headers();
 
                     int slotIndex = slab.acquire(streamId);
-                    if(slotIndex == NO_SLOT)
+                    if(slotIndex != NO_SLOT)
                     {
-                        source.doReset(newSourceId);
-                    }
-                    final MutableDirectBuffer store = slab.buffer(slotIndex);
-                    storeHeadersForTargetEstablish(headers, store);
+                        final MutableDirectBuffer store = slab.buffer(slotIndex);
+                        storeHeadersForTargetEstablish(headers, store);
 
-                    if(headers.anyMatch(IS_POLL_HEADER) && headers.anyMatch(IS_INJECTED_HEADER))
-                    {
-                        forEachMatch(headers, IS_POLL_HEADER, h ->
+                        if(headers.anyMatch(IS_POLL_HEADER) && headers.anyMatch(IS_INJECTED_HEADER))
                         {
-                            this.pollInterval = Integer.parseInt(h.value().asString());
-                        });
-                        schedulePoll(newTargetId, targetCorrelationId, newTarget, targetRef, streamId);
+                            forEachMatch(headers, IS_POLL_HEADER, h ->
+                            {
+                                this.pollInterval = Integer.parseInt(h.value().asString());
+                            });
+                            schedulePoll(newTargetId, targetCorrelationId, newTarget, targetRef, streamId, store, slotIndex);
+                        }
+                        else
+                        {
+                            newTarget.doHttpBegin(newTargetId, targetRef, targetCorrelationId, e -> e.set(beginRO.extension()));
+                            newTarget.addThrottle(newTargetId, this::handleThrottle);
+                        }
+
+                        final Correlation correlation = new Correlation(correlationId, source.routableName(),
+                                OUTPUT_ESTABLISHED, slotIndex, this.storedRequestSize);
+                        correlateNew.accept(targetCorrelationId, correlation);
+
+                        this.sourceId = newSourceId;
+                        this.target = newTarget;
+                        this.targetId = newTargetId;
                     }
                     else
                     {
+                        // fallback to proxy
                         newTarget.doHttpBegin(newTargetId, targetRef, targetCorrelationId, e -> e.set(beginRO.extension()));
                         newTarget.addThrottle(newTargetId, this::handleThrottle);
+
+                        final Correlation correlation = new Correlation(correlationId, source.routableName(),
+                                OUTPUT_ESTABLISHED, slotIndex, this.storedRequestSize);
+                        correlateNew.accept(targetCorrelationId, correlation);
+
+                        this.sourceId = newSourceId;
+                        this.target = newTarget;
+                        this.targetId = newTargetId;
                     }
-
-                    final Correlation correlation = new Correlation(correlationId, source.routableName(),
-                            OUTPUT_ESTABLISHED, slotIndex, this.storedRequestSize);
-                    correlateNew.accept(targetCorrelationId, correlation);
-
-                    this.sourceId = newSourceId;
-                    this.target = newTarget;
-                    this.targetId = newTargetId;
                 }
                 else
                 {
@@ -298,48 +307,43 @@ public final class SourceInputStreamFactory
 
         private void storeHeadersForTargetEstablish(ListFW<HttpHeaderFW> headers, final MutableDirectBuffer store)
         {
-            HttpHeadersUtil.forEachMatch(headers, b -> true, h ->
-            {
-                store.putBytes(storedRequestSize, h.buffer(), h.offset(), h.sizeof());
-                this.storedRequestSize += h.sizeof();
-            });
+           store.putBytes(0, headers.buffer(), headers.offset(), headers.sizeof());
+           this.storedRequestSize = headers.sizeof();
         }
 
         private void schedulePoll(final long newTargetId, final long targetCorrelationId, final Target newTarget,
-                final long targetRef, final long streamId)
+                final long targetRef, final long streamId, DirectBuffer store, int slotIndex)
         {
-            final int slotIndex = slab.acquire(streamId + 5000);
-            final MutableDirectBuffer store = slab.buffer(slotIndex);
-
-            beginRO.extension().get(httpBeginExRO::wrap);
-            final ListFW<HttpHeaderFW> headers = httpBeginExRO.headers();
-
-            Predicate<HttpHeaderFW> stripInjected = h -> INJECTED_HEADER_NAME.equals(h.name().asString());
-            if(headers.anyMatch(INJECTED_HEADER_AND_NO_CACHE))
-            {
-                if(headers.anyMatch(HttpHeadersUtil.NO_CACHE_CACHE_CONTROL))
-                {
-                    stripInjected = stripInjected.or(h -> "cache-control".equals(h.name().asString()));
-                }
-                else
-                {
-                    // TODO figure out how to remove just cache-control: no-cache and not all directives
-                }
-            }
-
-
-            HttpHeadersUtil.forEachMatch(headers, stripInjected.negate(), h ->
-            {
-                store.putBytes(pollExtensionSize, h.buffer(), h.offset(), h.sizeof());
-                pollExtensionSize += h.sizeof();
-            });
-
             scheduler.accept(System.currentTimeMillis() + (pollInterval * 1000), () ->
             {
-                octetsRO.wrap(store, 0, pollExtensionSize);
-                newTarget.doHttpBegin(newTargetId, targetRef, targetCorrelationId, e -> e.set(octetsRO));
+                final ListFW<HttpHeaderFW> headers = httpBeginExRO.headers().wrap(store, 0, storedRequestSize);
+
+                Predicate<HttpHeaderFW> isInjected = h -> INJECTED_HEADER_NAME.equals(h.name().asString());
+                if(headers.anyMatch(INJECTED_HEADER_AND_NO_CACHE))
+                {
+                    if(headers.anyMatch(HttpHeadersUtil.NO_CACHE_CACHE_CONTROL))
+                    {
+                        isInjected = isInjected.or(h -> "cache-control".equals(h.name().asString()));
+                    }
+                    else
+                    {
+                        // TODO figure out how to remove just cache-control: no-cache and not all directives
+                    }
+                }
+
+                Predicate<HttpHeaderFW> toForward = isInjected.negate();
+
+                newTarget.doHttpBegin2(targetId, targetRef, targetId,
+                    hs -> headers.forEach(h ->
+                    {
+                        if(toForward.test(h))
+                        {
+                            hs.item(b -> b.representation((byte) 0)
+                                         .name(h.name())
+                                         .value(h.value()));
+                        }
+                    }));
                 newTarget.addThrottle(newTargetId, this::handleThrottle);
-                slab.release(slotIndex);
             });
         }
 
