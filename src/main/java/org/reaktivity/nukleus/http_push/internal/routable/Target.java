@@ -153,10 +153,10 @@ public final class Target implements Nukleus
     }
 
     public void doHttpBegin(
-            long targetId,
-            long targetRef,
-            long correlationId,
-            Flyweight.Builder.Visitor injectHeaders)
+        long targetId,
+        long targetRef,
+        long correlationId,
+        Flyweight.Builder.Visitor injectHeaders)
     {
         BeginFW begin = beginRW.wrap(writeBuffer, 0, writeBuffer.capacity())
                 .streamId(targetId)
@@ -165,6 +165,24 @@ public final class Target implements Nukleus
                 .correlationId(correlationId)
                 .extension(e -> e.set(injectHeaders))
                 .build();
+
+        streamsBuffer.write(begin.typeId(), begin.buffer(), begin.offset(), begin.sizeof());
+    }
+
+    public void doHttpBegin2(
+        long targetId,
+        long targetRef,
+        long correlationId,
+        Consumer<ListFW.Builder<HttpHeaderFW.Builder, HttpHeaderFW>> mutator)
+    {
+        BeginFW begin = beginRW.wrap(writeBuffer, 0, writeBuffer.capacity())
+                .streamId(targetId)
+                .source(SOURCE_NAME_BUFFER, 0, SOURCE_NAME_BUFFER.capacity())
+                .sourceRef(targetRef)
+                .correlationId(correlationId)
+                .extension(e -> e.set(visitHttpBeginEx(mutator)))
+                .build();
+
         streamsBuffer.write(begin.typeId(), begin.buffer(), begin.offset(), begin.sizeof());
     }
 
