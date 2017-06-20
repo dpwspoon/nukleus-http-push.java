@@ -142,11 +142,33 @@ public final class SourceInputStreamFactory
         {
             switch (msgTypeId)
             {
+                case DataFW.TYPE_ID:
+                    processData(buffer, index, length);
+                    break;
+                case EndFW.TYPE_ID:
+                    processEnd(buffer, index, length);
+                    break;
+                default:
+                    processUnexpected(buffer, index, length);
+                    break;
+            }
+        }
+
+        private void afterScheduledPoll(
+                int msgTypeId,
+                DirectBuffer buffer,
+                int index,
+                int length)
+        {
+            switch (msgTypeId)
+            {
             case DataFW.TYPE_ID:
-                processData(buffer, index, length);
                 break;
             case EndFW.TYPE_ID:
-                processEnd(buffer, index, length);
+                target.removeThrottle(targetId);
+                endRO.wrap(buffer, index, index + length);
+                final long streamId = endRO.streamId();
+                source.removeStream(streamId);
                 break;
             default:
                 processUnexpected(buffer, index, length);
@@ -266,11 +288,13 @@ public final class SourceInputStreamFactory
                                 this.pollInterval = Integer.parseInt(h.value().asString());
                             });
                             schedulePoll(newTargetId, targetCorrelationId, newTarget, targetRef, streamId, store, slotIndex);
+                            this.streamState = this::afterScheduledPoll;
                         }
                         else
                         {
                             newTarget.doHttpBegin(newTargetId, targetRef, targetCorrelationId, e -> e.set(beginRO.extension()));
                             newTarget.addThrottle(newTargetId, this::handleThrottle);
+                            this.streamState = this::afterBeginOrData;
                         }
 
                         final Correlation correlation = new Correlation(correlationId, source.routableName(),
@@ -294,6 +318,7 @@ public final class SourceInputStreamFactory
                         this.sourceId = newSourceId;
                         this.target = newTarget;
                         this.targetId = newTargetId;
+                        this.streamState = this::afterBeginOrData;
                     }
                 }
                 else
@@ -301,8 +326,6 @@ public final class SourceInputStreamFactory
                     processInvalidRequest(buffer, index, length, sourceRef, "400");
                 }
             }
-
-            this.streamState = this::afterBeginOrData;
         }
 
         private void storeHeadersForTargetEstablish(ListFW<HttpHeaderFW> headers, final MutableDirectBuffer store)
@@ -343,7 +366,7 @@ public final class SourceInputStreamFactory
                                          .value(h.value()));
                         }
                     }));
-                newTarget.addThrottle(newTargetId, this::handleThrottle);
+                newTarget.doHttpEnd(targetId);
             });
         }
 
