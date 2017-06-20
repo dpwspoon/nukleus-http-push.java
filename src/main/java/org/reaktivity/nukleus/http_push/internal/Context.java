@@ -270,7 +270,7 @@ public class Context implements Closeable
 
             this.memoryForRepeatRequests = Integer.getInteger(MEMORY_FOR_REPEAT_REQUESTS, streamsBufferCapacity);
 
-            this.maximumRequestSize = Integer.getInteger(MAXIMUM_REQUEST_SIZE, streamsBufferCapacity / 8);
+            this.maximumRequestSize = Integer.getInteger(MAXIMUM_REQUEST_SIZE, 8 * 1024);
 
             // default FileSystem cannot be closed
             watchService(FileSystems.getDefault().newWatchService());
