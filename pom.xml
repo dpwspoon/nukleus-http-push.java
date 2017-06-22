@@ -64,6 +64,7 @@
       <groupId>org.reaktivity</groupId>
       <artifactId>nukleus-http-push.spec</artifactId>
       <version>${nukleus.http.push.spec.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.reaktivity</groupId>
