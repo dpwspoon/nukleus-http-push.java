@@ -316,10 +316,7 @@ public final class TargetOutputEstablishedStreamFactory
             int length)
         {
             windowRO.wrap(buffer, index, index + length);
-            if(windowRO.update() > 0)
-            {
-                source.doWindow(sourceId, windowRO.update());
-            }
+            source.doWindow(sourceId, windowRO.update());
         }
 
         private void processReset(
