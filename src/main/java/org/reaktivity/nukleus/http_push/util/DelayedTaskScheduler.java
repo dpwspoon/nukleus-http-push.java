@@ -13,15 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package org.reaktivity.nukleus.http_push.internal.util;
+package org.reaktivity.nukleus.http_push.util;
 
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 
 import org.agrona.collections.Long2ObjectHashMap;
+import org.reaktivity.nukleus.Nukleus;
 
-public class DelayedTaskScheduler
+public class DelayedTaskScheduler implements Nukleus 
 {
     private final Long2ObjectHashMap<Runnable> taskLookup;
     private final SortedSet<Long> scheduledTimes;
@@ -44,7 +45,7 @@ public class DelayedTaskScheduler
         }
     }
 
-    public void process()
+    public int process()
     {
         if (!scheduledTimes.isEmpty())
         {
@@ -57,7 +58,9 @@ public class DelayedTaskScheduler
                 }
             );
             scheduledTimes.removeAll(past);
+            return past.size();
         }
+        return 0;
     }
 
     private static BiFunction<? super Runnable, ? super Runnable, ? extends Runnable> mergeTasks = (t1, t2) ->

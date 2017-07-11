@@ -13,14 +13,18 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+package org.reaktivity.nukleus.http_push;
 
-package org.reaktivity.nukleus.http_push.internal;
+import static org.reaktivity.nukleus.route.RouteKind.PROXY;
 
 import org.reaktivity.nukleus.Configuration;
-import org.reaktivity.nukleus.ControllerBuilder;
-import org.reaktivity.nukleus.ControllerFactorySpi;
+import org.reaktivity.nukleus.Nukleus;
+import org.reaktivity.nukleus.NukleusBuilder;
+import org.reaktivity.nukleus.NukleusFactorySpi;
+import org.reaktivity.nukleus.http_push.internal.stream.ProxyStreamFactoryBuilder;
+import org.reaktivity.nukleus.http_push.util.DelayedTaskScheduler;
 
-public class HttpPushControllerFactorySpi implements ControllerFactorySpi<HttpPushController>
+public final class HttpPushNukleusFactorySpi implements NukleusFactorySpi
 {
 
     @Override
@@ -30,20 +34,16 @@ public class HttpPushControllerFactorySpi implements ControllerFactorySpi<HttpPu
     }
 
     @Override
-    public Class<HttpPushController> kind()
-    {
-        return HttpPushController.class;
-    }
-
-    @Override
-    public HttpPushController create(
+    public Nukleus create(
         Configuration config,
-        ControllerBuilder<HttpPushController> builder)
+        NukleusBuilder builder)
     {
-        Context context = new Context();
-        context.readonly(true)
-            .conclude(config);
+        DelayedTaskScheduler scheduler = new DelayedTaskScheduler();
+        builder.inject(scheduler);
+        final ProxyStreamFactoryBuilder proxyFactoryBuilder = new ProxyStreamFactoryBuilder(scheduler::schedule);
 
-        return new HttpPushController(context);
+        return builder.streamFactory(PROXY, proxyFactoryBuilder)
+                      .build();
     }
+
 }

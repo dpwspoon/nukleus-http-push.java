@@ -25,7 +25,7 @@ import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 import org.kaazing.k3po.junit.annotation.Specification;
 import org.kaazing.k3po.junit.rules.K3poRule;
-import org.reaktivity.reaktor.test.NukleusRule;
+import org.reaktivity.reaktor.test.ReaktorRule;
 
 public class OpeningIT
 {
@@ -33,18 +33,15 @@ public class OpeningIT
         .addScriptRoot("route", "org/reaktivity/specification/nukleus/http_push/control/route")
         .addScriptRoot("streams", "org/reaktivity/specification/nukleus/http_push/streams/proxy/");
 
-    private final TestRule timeout = new DisableOnDebug(new Timeout(5, SECONDS));
+    private final TestRule timeout = new DisableOnDebug(new Timeout(15, SECONDS));
 
-    private final NukleusRule nukleus = new NukleusRule("http-push")
-        .directory("target/nukleus-itests")
-        .commandBufferCapacity(1024)
-        .responseBufferCapacity(1024)
-        .counterValuesBufferCapacity(1024)
-        // streams() are still needed due to: https://github.com/k3po/k3po/issues/437
-        .streams("http-push", "source")
-        .streams("target", "http-push#source")
-        .streams("http-push", "target")
-        .streams("source", "http-push#target");
+    private final ReaktorRule nukleus = new ReaktorRule()
+            .directory("target/nukleus-itests")
+            .commandBufferCapacity(1024)
+            .responseBufferCapacity(1024)
+            .counterValuesBufferCapacity(1024)
+            .nukleus("http-push"::equals)
+            .clean();
 
     @Rule
     public final TestRule chain = outerRule(nukleus).around(k3po).around(timeout);
@@ -56,7 +53,6 @@ public class OpeningIT
         "${streams}/opening/connect/server" })
     public void shouldEstablishConnection() throws Exception
     {
-        k3po.start();
         k3po.finish();
     }
 
@@ -67,7 +63,6 @@ public class OpeningIT
         "${streams}/inject.push.promise/connect/server" })
     public void shouldInjectPushPromise() throws Exception
     {
-        k3po.start();
         k3po.finish();
     }
 
@@ -76,9 +71,8 @@ public class OpeningIT
         "${route}/proxy/controller",
         "${streams}/strip.injected.headers/accept/client",
         "${streams}/strip.injected.headers/connect/server" })
-    public void shouldStripInjectPushPromise() throws Exception
+    public void shouldStripInjectPushPromiseHeaders() throws Exception
     {
-        k3po.start();
         k3po.finish();
     }
 
