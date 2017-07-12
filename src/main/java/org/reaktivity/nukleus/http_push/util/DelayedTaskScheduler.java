@@ -22,7 +22,7 @@ import java.util.function.BiFunction;
 import org.agrona.collections.Long2ObjectHashMap;
 import org.reaktivity.nukleus.Nukleus;
 
-public class DelayedTaskScheduler implements Nukleus 
+public class DelayedTaskScheduler implements Nukleus
 {
     private final Long2ObjectHashMap<Runnable> taskLookup;
     private final SortedSet<Long> scheduledTimes;

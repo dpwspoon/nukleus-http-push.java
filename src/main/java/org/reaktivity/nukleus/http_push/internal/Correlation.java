@@ -21,7 +21,8 @@ import java.util.Objects;
 
 import org.reaktivity.nukleus.buffer.BufferPool;
 
-public class Correlation {
+public class Correlation
+{
 
     private final String connectSource;
     private final int slotIndex;
@@ -53,7 +54,8 @@ public class Correlation {
         return connectCorrelation;
     }
 
-    public int slotIndex() {
+    public int slotIndex()
+    {
         return slotIndex;
     }
 
@@ -62,7 +64,8 @@ public class Correlation {
         return slotLimit;
     }
 
-    public BufferPool bufferPool() {
+    public BufferPool bufferPool()
+    {
         return bufferPool;
     }
 

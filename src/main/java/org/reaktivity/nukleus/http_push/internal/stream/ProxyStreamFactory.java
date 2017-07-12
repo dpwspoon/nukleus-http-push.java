@@ -51,7 +51,8 @@ import org.reaktivity.nukleus.http_push.util.LongObjectBiConsumer;
 import org.reaktivity.nukleus.route.RouteHandler;
 import org.reaktivity.nukleus.stream.StreamFactory;
 
-public class ProxyStreamFactory implements StreamFactory {
+public class ProxyStreamFactory implements StreamFactory
+{
 
     // TODO, remove need for RW in simplification of inject headers
     private final HttpBeginExFW.Builder httpBeginExRW = new HttpBeginExFW.Builder();
@@ -211,7 +212,7 @@ public class ProxyStreamFactory implements StreamFactory {
             final String acceptName = begin.source().asString();
             final RouteFW connectRoute = resolveTarget(acceptRef, acceptName);
 
-            if(connectRoute == null)
+            if (connectRoute == null)
             {
                 // just reset
                 long acceptStreamId = begin.streamId();
@@ -233,17 +234,19 @@ public class ProxyStreamFactory implements StreamFactory {
                 final ListFW<HttpHeaderFW> headers = httpBeginExRO.headers();
 
                 int slotIndex = bufferPool.acquire(connectStreamId);
-                if(slotIndex != NO_SLOT)
+                if (slotIndex != NO_SLOT)
                 {
                     final MutableDirectBuffer store = bufferPool.buffer(slotIndex);
                     store.putBytes(0, headers.buffer(), headers.offset(), headers.sizeof());
                     storedRequestSize = headers.sizeof();
-    
-                    Correlation correlation = new Correlation(acceptName, bufferPool, slotIndex, storedRequestSize, acceptCorrelationId);
-  
-                    if(headers.anyMatch(IS_POLL_HEADER) && headers.anyMatch(IS_INJECTED_HEADER))
+
+                    Correlation correlation =
+                            new Correlation(acceptName, bufferPool, slotIndex, storedRequestSize, acceptCorrelationId);
+
+                    if (headers.anyMatch(IS_POLL_HEADER) && headers.anyMatch(IS_INJECTED_HEADER))
                     {
-                        schedulePoll(connect, connectStreamId, connectRef, connectCorrelationId, store, slotIndex, storedRequestSize);
+                        schedulePoll(connect, connectStreamId, connectRef,
+                                     connectCorrelationId, store, slotIndex, storedRequestSize);
                         this.connect = connect;
                         this.connectStreamId = connectStreamId;
                         this.streamState = this::afterScheduledPoll;
@@ -251,7 +254,8 @@ public class ProxyStreamFactory implements StreamFactory {
                     }
                     else
                     {
-                        writer.doHttpBegin(connect, connectStreamId, connectRef, connectCorrelationId, e -> e.set(beginRO.extension()));
+                        writer.doHttpBegin(connect, connectStreamId, connectRef,
+                                           connectCorrelationId, e -> e.set(beginRO.extension()));
 
                         router.setThrottle(connectName, connectStreamId, this::handleThrottle);
 
@@ -271,16 +275,16 @@ public class ProxyStreamFactory implements StreamFactory {
                 long correlationId,
                 MutableDirectBuffer store,
                 int slotIndex,
-                int storedRequestSize) 
+                int storedRequestSize)
         {
             scheduler.accept(System.currentTimeMillis() + (pollInterval * 1000), () ->
             {
                 final ListFW<HttpHeaderFW> headers = httpBeginExRO.headers().wrap(store, 0, storedRequestSize);
 
                 Predicate<HttpHeaderFW> isInjected = h -> INJECTED_HEADER_NAME.equals(h.name().asString());
-                if(headers.anyMatch(INJECTED_HEADER_AND_NO_CACHE))
+                if (headers.anyMatch(INJECTED_HEADER_AND_NO_CACHE))
                 {
-                    if(headers.anyMatch(NO_CACHE_CACHE_CONTROL))
+                    if (headers.anyMatch(NO_CACHE_CACHE_CONTROL))
                     {
                         isInjected = isInjected.or(h -> "cache-control".equals(h.name().asString()));
                     }
@@ -296,10 +300,10 @@ public class ProxyStreamFactory implements StreamFactory {
                     connectTarget,
                     connectStreamId,
                     connectRef,
-                    correlationId, 
+                    correlationId,
                     hs -> headers.forEach(h ->
                     {
-                        if(toForward.test(h))
+                        if (toForward.test(h))
                         {
                             hs.item(b -> b.representation((byte) 0)
                                          .name(h.name())
@@ -520,12 +524,15 @@ public class ProxyStreamFactory implements StreamFactory {
                     final ListFW<HttpHeaderFW> requestHeaders = headersRO.wrap(savedRequest, 0, slabSlotLimit);
 
                     boolean sendUpdateOnChange = requestHeaders.anyMatch(IS_POLL_HEADER);
-                    if(sendUpdateOnChange)
+                    if (sendUpdateOnChange)
                     {
                         final OctetsFW responseExtensions = beginRO.extension();
                         responseExtensions.get(httpBeginExRO::wrap);
-                        final ListFW<HttpHeaderFW> responseHeaders = headersRO2.wrap(responseExtensions.buffer(), responseExtensions.offset(), responseExtensions.limit());
-                        writer.doHttpBegin(acceptReply, acceptReplyStreamId, 0L, acceptCorrelationId, injectStaleWhileRevalidate(headersToExtensions(responseHeaders)));
+                        final ListFW<HttpHeaderFW> responseHeaders = headersRO2.wrap(responseExtensions.buffer(),
+                                                                                     responseExtensions.offset(),
+                                                                                     responseExtensions.limit());
+                        writer.doHttpBegin(acceptReply, acceptReplyStreamId, 0L,
+                                acceptCorrelationId, injectStaleWhileRevalidate(headersToExtensions(responseHeaders)));
 
                         headersRO.wrap(savedRequest, 0, slabSlotLimit);
                         writer.doH2PushPromise(acceptReply, acceptReplyStreamId, headersRO, headersToExtensions(requestHeaders));
@@ -534,9 +541,10 @@ public class ProxyStreamFactory implements StreamFactory {
                     {
                         final OctetsFW responseExtensions = beginRO.extension();
                         responseExtensions.get(httpBeginExRO::wrap);
-                        writer.doHttpBegin(acceptReply, acceptReplyStreamId, 0L, acceptCorrelationId, e -> e.set(responseExtensions));
+                        writer.doHttpBegin(acceptReply, acceptReplyStreamId, 0L,
+                                acceptCorrelationId, e -> e.set(responseExtensions));
                     }
-                    
+
                     router.setThrottle(acceptReplyName, acceptReplyStreamId, this::handleThrottle);
                     bufferPool.release(slotIndex);
                 }
@@ -555,7 +563,7 @@ public class ProxyStreamFactory implements StreamFactory {
                 writer.doReset(connectThrottle, connectReplyStreamId);
             }
         }
-        
+
         private void handleThrottle(
                 int msgTypeId,
                 DirectBuffer buffer,
