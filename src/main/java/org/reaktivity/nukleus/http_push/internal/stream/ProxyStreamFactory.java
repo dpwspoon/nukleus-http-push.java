@@ -164,7 +164,6 @@ public class ProxyStreamFactory implements StreamFactory
         private final long clientStreamId;
 
         private MessageConsumer streamState;
-        private int window;
 
         private int pollInterval = 0; // needed because effectively final forEach
         private MessageConsumer connect;
@@ -221,9 +220,9 @@ public class ProxyStreamFactory implements StreamFactory
             else
             {
                 final String connectName = connectRoute.target().asString();
-                final MessageConsumer connect = router.supplyTarget(connectName);
+                this.connect = router.supplyTarget(connectName);
                 final long connectRef = connectRoute.targetRef();
-                final long connectStreamId =  supplyStreamId.getAsLong();
+                this.connectStreamId =  supplyStreamId.getAsLong();
                 final long acceptCorrelationId = begin.correlationId();
                 final long connectCorrelationId = supplyCorrelationId.getAsLong();
 
@@ -247,8 +246,6 @@ public class ProxyStreamFactory implements StreamFactory
                     {
                         schedulePoll(connect, connectStreamId, connectRef,
                                      connectCorrelationId, store, slotIndex, storedRequestSize);
-                        this.connect = connect;
-                        this.connectStreamId = connectStreamId;
                         this.streamState = this::afterScheduledPoll;
                         correlations.put(connectCorrelationId, correlation);
                     }
@@ -260,8 +257,6 @@ public class ProxyStreamFactory implements StreamFactory
                         router.setThrottle(connectName, connectStreamId, this::handleThrottle);
 
                         this.streamState = this::afterBegin;
-                        this.connect = connect;
-                        this.connectStreamId = connectStreamId;
                         correlations.put(connectCorrelationId, correlation);
                     }
                 }
@@ -318,16 +313,8 @@ public class ProxyStreamFactory implements StreamFactory
         private void handleData(
                 DataFW data)
         {
-            window -= dataRO.length();
-            if (window < 0)
-            {
-                writer.doReset(acceptThrottle, clientStreamId);
-            }
-            else
-            {
-                final OctetsFW payload = data.payload();
-                writer.doHttpData(connect, connectStreamId, payload.buffer(), payload.offset(), payload.sizeof());
-            }
+            final OctetsFW payload = data.payload();
+            writer.doHttpData(connect, connectStreamId, payload.buffer(), payload.offset(), payload.sizeof());
         }
 
         private void afterBegin(
@@ -435,7 +422,6 @@ public class ProxyStreamFactory implements StreamFactory
         private final MessageConsumer connectThrottle;
         private final long connectReplyStreamId;
 
-        private Correlation acceptCorrelation;
         private MessageConsumer acceptReply;
         private long acceptReplyStreamId;
 
@@ -506,20 +492,20 @@ public class ProxyStreamFactory implements StreamFactory
         {
             final long connectRef = begin.sourceRef();
             final long correlationId = begin.correlationId();
-            acceptCorrelation = connectRef == 0L ? correlations.remove(correlationId) : null;
+            final Correlation streamCorrelation = connectRef == 0L ? correlations.remove(correlationId) : null;
 
-            if (acceptCorrelation != null)
+            if (streamCorrelation != null)
             {
-                final String acceptReplyName = acceptCorrelation.connectSource();
-                final MessageConsumer acceptReply = router.supplyTarget(acceptReplyName);
-                final long acceptReplyStreamId = supplyStreamId.getAsLong();
-                final long acceptCorrelationId = acceptCorrelation.connectCorrelation();
-                final BufferPool bufferPool = acceptCorrelation.bufferPool();
-                final int slotIndex = acceptCorrelation.slotIndex();
+                final String acceptReplyName = streamCorrelation.connectSource();
+                this.acceptReply = router.supplyTarget(acceptReplyName);
+                this.acceptReplyStreamId = supplyStreamId.getAsLong();
+                final long acceptCorrelationId = streamCorrelation.connectCorrelation();
+                final BufferPool bufferPool = streamCorrelation.bufferPool();
+                final int slotIndex = streamCorrelation.slotIndex();
 
                 if (slotIndex != NO_SLOT)
                 {
-                    final int slabSlotLimit = acceptCorrelation.slotLimit();
+                    final int slabSlotLimit = streamCorrelation.slotLimit();
                     final MutableDirectBuffer savedRequest = bufferPool.buffer(slotIndex);
                     final ListFW<HttpHeaderFW> requestHeaders = headersRO.wrap(savedRequest, 0, slabSlotLimit);
 
@@ -554,8 +540,6 @@ public class ProxyStreamFactory implements StreamFactory
                     responseExtensions.get(httpBeginExRO::wrap);
                     writer.doHttpBegin(acceptReply, acceptReplyStreamId, 0L, acceptCorrelationId, e -> e.set(responseExtensions));
                 }
-                this.acceptReply = acceptReply;
-                this.acceptReplyStreamId = acceptReplyStreamId;
                 this.streamState = this::afterBegin;
             }
             else
@@ -605,10 +589,9 @@ public class ProxyStreamFactory implements StreamFactory
             ListFW<HttpHeaderFW> headersFW)
         {
             return x -> headersFW
-            .forEach(h -> x.item(y ->
-            {
-                y.representation((byte) 0).name(h.name()).value(h.value());
-            }));
+            .forEach(h ->
+                x.item(y -> y.representation((byte) 0).name(h.name()).value(h.value()))
+            );
         }
 
         private Flyweight.Builder.Visitor injectStaleWhileRevalidate(
