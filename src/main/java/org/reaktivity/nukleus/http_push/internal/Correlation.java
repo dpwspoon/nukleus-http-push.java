@@ -73,10 +73,10 @@ public class Correlation
     public int hashCode()
     {
         int result = Long.hashCode(connectCorrelation);
-        result = 31 * connectSource.hashCode();
-        result = 31 * slotIndex;
-        result = 31 * slotLimit;
-        result = 31 * bufferPool.hashCode();
+        result = 31 * result + connectSource.hashCode();
+        result = 31 * result + slotIndex;
+        result = 31 * result + slotLimit;
+        result = 31 * result + bufferPool.hashCode();
 
         return result;
     }

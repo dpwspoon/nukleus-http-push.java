@@ -21,8 +21,13 @@ import java.util.function.Predicate;
 import org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW;
 
-public class HttpHeadersUtil
+public final class HttpHeadersUtil
 {
+
+    private HttpHeadersUtil()
+    {
+        // utility
+    }
 
     public static final String CACHE_SYNC = "x-http-cache-sync";
     public static final String INJECTED_HEADER_NAME = "x-poll-injected";
