@@ -24,6 +24,8 @@ import org.reaktivity.nukleus.http_push.internal.types.ListFW;
 public final class HttpHeadersUtil
 {
 
+    public static final String NO_CACHE = "no-cache";
+
     private HttpHeadersUtil()
     {
         // utility
@@ -32,6 +34,7 @@ public final class HttpHeadersUtil
     public static final String CACHE_SYNC = "x-http-cache-sync";
     public static final String INJECTED_HEADER_NAME = "x-poll-injected";
     public static final String INJECTED_HEADER_DEFAULT_VALUE = CACHE_SYNC;
+    public static final String CACHE_CONTROL = "cache-control";
     public static final String INJECTED_HEADER_AND_NO_CACHE_VALUE = INJECTED_HEADER_DEFAULT_VALUE + ", no-cache";
     public static final String POLL_HEADER_NAME = "x-retry-after";
 
@@ -75,6 +78,7 @@ public final class HttpHeadersUtil
         String name = h.name().asString();
         String value = h.value().asString();
         // TODO proper parsing of value
-        return "cache-control".equals(name) && value.contains("no-cache");
+        return CACHE_CONTROL.equals(name) && value.contains(NO_CACHE);
     };
+
 }

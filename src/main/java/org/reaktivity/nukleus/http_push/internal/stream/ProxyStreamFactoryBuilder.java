@@ -29,7 +29,6 @@ import org.reaktivity.nukleus.stream.StreamFactoryBuilder;
 
 public class ProxyStreamFactoryBuilder implements StreamFactoryBuilder
 {
-
    private final Long2ObjectHashMap<Correlation> correlations;
 
     private RouteHandler router;

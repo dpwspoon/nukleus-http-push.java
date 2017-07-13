@@ -72,6 +72,26 @@ public class ProxyIT
     @Test
     @Specification({
         "${route}/proxy/controller",
+        "${streams}/inject.header.values/accept/client",
+        "${streams}/inject.header.values/connect/server" })
+    public void shouldInjectHeaderValues() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
+        "${streams}/inject.missing.header.values/accept/client",
+        "${streams}/inject.missing.header.values/connect/server" })
+    public void shouldInjectMissingHeaderValues() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
         "${streams}/strip.injected.headers/accept/client",
         "${streams}/strip.injected.headers/connect/server" })
     public void shouldStripInjectedHeaders() throws Exception
@@ -82,9 +102,29 @@ public class ProxyIT
     @Test
     @Specification({
         "${route}/proxy/controller",
+        "${streams}/strip.injected.header.values/accept/client",
+        "${streams}/strip.injected.header.values/connect/server" })
+    public void shouldStripInjectedHeaderValues() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
         "${streams}/client.sent.abort/accept/client",
         "${streams}/client.sent.abort/connect/server" })
     public void shouldForwardAbortOnAcceptToConnect() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
+        "${streams}/strip.missing.injected.header.values/accept/client",
+        "${streams}/strip.missing.injected.header.values/connect/server" })
+    public void shouldStripMissingInjectedHeaderValues() throws Exception
     {
         k3po.finish();
     }
