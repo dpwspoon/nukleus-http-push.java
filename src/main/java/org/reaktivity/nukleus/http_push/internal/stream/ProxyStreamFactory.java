@@ -41,6 +41,7 @@ import org.reaktivity.nukleus.http_push.internal.types.ListFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW.Builder;
 import org.reaktivity.nukleus.http_push.internal.types.OctetsFW;
 import org.reaktivity.nukleus.http_push.internal.types.control.RouteFW;
+import org.reaktivity.nukleus.http_push.internal.types.stream.AbortFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.BeginFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.DataFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.EndFW;
@@ -63,6 +64,7 @@ public class ProxyStreamFactory implements StreamFactory
     private final ListFW<HttpHeaderFW> headersRO2 = new HttpBeginExFW().headers();
     private final DataFW dataRO = new DataFW();
     private final EndFW endRO = new EndFW();
+    private final AbortFW abortRO = new AbortFW();
     private final RouteFW routeRO = new RouteFW();
 
     private final WindowFW windowRO = new WindowFW();
@@ -168,6 +170,9 @@ public class ProxyStreamFactory implements StreamFactory
         private int pollInterval = 0; // needed because effectively final forEach
         private MessageConsumer connect;
         private long connectStreamId;
+        private long connectCorrelationId;
+
+        private boolean aborted = false; // needed because no cancel in scheduler
 
         private ProxyAcceptStream(
                 MessageConsumer clientThrottle,
@@ -224,7 +229,7 @@ public class ProxyStreamFactory implements StreamFactory
                 final long connectRef = connectRoute.targetRef();
                 this.connectStreamId =  supplyStreamId.getAsLong();
                 final long acceptCorrelationId = begin.correlationId();
-                final long connectCorrelationId = supplyCorrelationId.getAsLong();
+                this.connectCorrelationId = supplyCorrelationId.getAsLong();
 
                 int storedRequestSize = -1;
 
@@ -274,39 +279,42 @@ public class ProxyStreamFactory implements StreamFactory
         {
             scheduler.accept(System.currentTimeMillis() + (pollInterval * 1000), () ->
             {
-                final ListFW<HttpHeaderFW> headers = httpBeginExRO.headers().wrap(store, 0, storedRequestSize);
-
-                Predicate<HttpHeaderFW> isInjected = h -> INJECTED_HEADER_NAME.equals(h.name().asString());
-                if (headers.anyMatch(INJECTED_HEADER_AND_NO_CACHE))
+                if (!this.aborted)
                 {
-                    if (headers.anyMatch(NO_CACHE_CACHE_CONTROL))
-                    {
-                        isInjected = isInjected.or(h -> "cache-control".equals(h.name().asString()));
-                    }
-                    else
-                    {
-                        // TODO figure out how to remove just cache-control: no-cache and not all directives
-                    }
-                }
+                    final ListFW<HttpHeaderFW> headers = httpBeginExRO.headers().wrap(store, 0, storedRequestSize);
 
-                Predicate<HttpHeaderFW> toForward = isInjected.negate();
-
-                writer.doHttpBegin2(
-                    connectTarget,
-                    connectStreamId,
-                    connectRef,
-                    correlationId,
-                    hs -> headers.forEach(h ->
+                    Predicate<HttpHeaderFW> isInjected = h -> INJECTED_HEADER_NAME.equals(h.name().asString());
+                    if (headers.anyMatch(INJECTED_HEADER_AND_NO_CACHE))
                     {
-                        if (toForward.test(h))
+                        if (headers.anyMatch(NO_CACHE_CACHE_CONTROL))
                         {
-                            hs.item(b -> b.representation((byte) 0)
-                                         .name(h.name())
-                                         .value(h.value()));
+                            isInjected = isInjected.or(h -> "cache-control".equals(h.name().asString()));
                         }
-                    }));
+                        else
+                        {
+                            // TODO figure out how to remove just cache-control: no-cache and not all directives
+                        }
+                    }
 
-                writer.doHttpEnd(connectTarget, connectStreamId);
+                    Predicate<HttpHeaderFW> toForward = isInjected.negate();
+
+                    writer.doHttpBegin2(
+                        connectTarget,
+                        connectStreamId,
+                        connectRef,
+                        correlationId,
+                        hs -> headers.forEach(h ->
+                        {
+                            if (toForward.test(h))
+                            {
+                                hs.item(b -> b.representation((byte) 0)
+                                             .name(h.name())
+                                             .value(h.value()));
+                            }
+                        }));
+
+                    writer.doHttpEnd(connectTarget, connectStreamId);
+                }
             });
         }
 
@@ -333,12 +341,12 @@ public class ProxyStreamFactory implements StreamFactory
                 final EndFW end = endRO.wrap(buffer, index, index + length);
                 handleEnd(end);
                 break;
-//          TODO
-//            case AbortFW.TYPE_ID:
-//                final AbortFW abort = abortRO.wrap(buffer, index, index + length);
-//                handleAbort(abort);
-//                break;
+            case AbortFW.TYPE_ID:
+                final AbortFW abort = abortRO.wrap(buffer, index, index + length);
+                handleAbort(abort);
+                break;
             default:
+                correlations.remove(connectCorrelationId);
                 writer.doReset(acceptThrottle, clientStreamId);
                 break;
             }
@@ -358,13 +366,13 @@ public class ProxyStreamFactory implements StreamFactory
                 final EndFW end = endRO.wrap(buffer, index, index + length);
                 handleEnd(end);
                 break;
-//          TODO
-//            case AbortFW.TYPE_ID:
-//                final AbortFW abort = abortRO.wrap(buffer, index, index + length);
-//                handleAbort(abort);
-//                break;
+            case AbortFW.TYPE_ID:
+                final AbortFW abort = abortRO.wrap(buffer, index, index + length);
+                handleAbort(abort);
+                break;
             default:
-                // TODO cancel outstanding scheduled task?
+                this.aborted = true;
+                correlations.remove(connectCorrelationId);
                 writer.doReset(acceptThrottle, clientStreamId);
                 break;
             }
@@ -412,8 +420,15 @@ public class ProxyStreamFactory implements StreamFactory
         {
             writer.doReset(acceptThrottle, clientStreamId);
         }
-    }
 
+        private void handleAbort(
+            AbortFW abort)
+        {
+            correlations.remove(connectCorrelationId);
+            this.aborted = true;
+            writer.doAbort(connect, connectStreamId);
+        }
+    }
 
     private final class ProxyConnectReplyStream
     {
@@ -476,11 +491,10 @@ public class ProxyStreamFactory implements StreamFactory
                     final EndFW end = endRO.wrap(buffer, index, index + length);
                     handleEnd(end);
                     break;
-//                  TODO
-//                  case AbortFW.TYPE_ID:
-//                      final AbortFW abort = abortRO.wrap(buffer, index, index + length);
-//                      handleAbort(abort);
-//                      break;
+                case AbortFW.TYPE_ID:
+                    final AbortFW abort = abortRO.wrap(buffer, index, index + length);
+                    handleAbort(abort);
+                    break;
                 default:
                     writer.doReset(connectThrottle, connectReplyStreamId);
                     break;
@@ -583,6 +597,12 @@ public class ProxyStreamFactory implements StreamFactory
             ResetFW reset)
         {
             writer.doReset(connectThrottle, connectReplyStreamId);
+        }
+
+        private void handleAbort(
+                AbortFW abort)
+        {
+            writer.doAbort(acceptReply, acceptReplyStreamId);
         }
 
         private Consumer<Builder<HttpHeaderFW.Builder, HttpHeaderFW>> headersToExtensions(

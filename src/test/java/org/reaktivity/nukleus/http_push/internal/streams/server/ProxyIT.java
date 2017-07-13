@@ -17,6 +17,7 @@ package org.reaktivity.nukleus.http_push.internal.streams.server;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.rules.RuleChain.outerRule;
+import static org.reaktivity.reaktor.internal.ReaktorConfiguration.ABORT_STREAM_FRAME_TYPE_ID;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,9 +26,10 @@ import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 import org.kaazing.k3po.junit.annotation.Specification;
 import org.kaazing.k3po.junit.rules.K3poRule;
+import org.reaktivity.nukleus.http_push.internal.types.stream.AbortFW;
 import org.reaktivity.reaktor.test.ReaktorRule;
 
-public class OpeningIT
+public class ProxyIT
 {
     private final K3poRule k3po = new K3poRule()
         .addScriptRoot("route", "org/reaktivity/specification/nukleus/http_push/control/route")
@@ -41,6 +43,7 @@ public class OpeningIT
             .responseBufferCapacity(1024)
             .counterValuesBufferCapacity(1024)
             .nukleus("http-push"::equals)
+            .configure(ABORT_STREAM_FRAME_TYPE_ID, AbortFW.TYPE_ID)
             .clean();
 
     @Rule
@@ -51,7 +54,7 @@ public class OpeningIT
         "${route}/proxy/controller",
         "${streams}/opening/accept/client",
         "${streams}/opening/connect/server" })
-    public void shouldEstablishConnection() throws Exception
+    public void shouldProxyConnection() throws Exception
     {
         k3po.finish();
     }
@@ -71,7 +74,56 @@ public class OpeningIT
         "${route}/proxy/controller",
         "${streams}/strip.injected.headers/accept/client",
         "${streams}/strip.injected.headers/connect/server" })
-    public void shouldStripInjectPushPromiseHeaders() throws Exception
+    public void shouldStripInjectedHeaders() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
+        "${streams}/client.sent.abort/accept/client",
+        "${streams}/client.sent.abort/connect/server" })
+    public void shouldForwardAbortOnAcceptToConnect() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
+        "${streams}/client.sent.abort.on.scheduled.poll/accept/client" })
+    public void shouldCancelScheduledPollOnAbort() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
+        "${streams}/server.sent.abort/accept/client",
+        "${streams}/server.sent.abort/connect/server" })
+    public void shouldForwardAbortOnConnectReplyToAcceptReply() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
+        "${streams}/server.sent.reset/accept/client",
+        "${streams}/server.sent.reset/connect/server" })
+    public void shouldForwardResetOnConnectToAccept() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
+        "${streams}/client.sent.reset/accept/client",
+        "${streams}/client.sent.reset/connect/server" })
+    public void shouldForwardResetOnAcceptReplyToConnectReply() throws Exception
     {
         k3po.finish();
     }

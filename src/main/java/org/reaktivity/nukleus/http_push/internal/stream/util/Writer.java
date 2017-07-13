@@ -35,6 +35,7 @@ import org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW.Builder;
 import org.reaktivity.nukleus.http_push.internal.types.OctetsFW;
+import org.reaktivity.nukleus.http_push.internal.types.stream.AbortFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.BeginFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.DataFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.EndFW;
@@ -52,6 +53,7 @@ public class Writer
     private final HttpBeginExFW.Builder httpBeginExRW = new HttpBeginExFW.Builder();
     private final WindowFW.Builder windowRW = new WindowFW.Builder();
     private final ResetFW.Builder resetRW = new ResetFW.Builder();
+    private final AbortFW.Builder abortRW = new AbortFW.Builder();
 
     private final MutableDirectBuffer writeBuffer;
 
@@ -59,26 +61,6 @@ public class Writer
     {
         this.writeBuffer = writeBuffer;
     }
-
-//    public void doHttpBegin(
-//        MessageConsumer target,
-//        long targetStreamId,
-//        long targetRef,
-//        long correlationId,
-//        DirectBuffer extBuffer,
-//        int extOffset,
-//        int extLength)
-//    {
-//        BeginFW begin = beginRW.wrap(writeBuffer, 0, writeBuffer.capacity())
-//                               .streamId(targetStreamId)
-//                               .source(SOURCE_NAME_BUFFER, 0, SOURCE_NAME_BUFFER.capacity())
-//                               .sourceRef(targetRef)
-//                               .correlationId(correlationId)
-//                               .extension(extBuffer, extOffset, extLength)
-//                               .build();
-//
-//        target.accept(begin.typeId(), begin.buffer(), begin.offset(), begin.sizeof());
-//    }
 
     public void doHttpBegin(
         MessageConsumer target,
@@ -201,6 +183,18 @@ public class Writer
                                      .build();
 
         throttle.accept(reset.typeId(), reset.buffer(), reset.offset(), reset.sizeof());
+    }
+
+    public void doAbort(
+        final MessageConsumer target,
+        final long streamId)
+    {
+        final AbortFW abort = abortRW.wrap(writeBuffer, 0, writeBuffer.capacity())
+                                     .streamId(streamId)
+                                     .extension(e -> e.reset())
+                                     .build();
+
+        target.accept(abort.typeId(), abort.buffer(), abort.offset(), abort.sizeof());
     }
 
     private Flyweight.Builder.Visitor visitHttpBeginEx(
