@@ -125,16 +125,16 @@ public class ProxyStreamFactory implements StreamFactory
 
     private MessageConsumer newAcceptStream(
             final BeginFW begin,
-            final MessageConsumer networkThrottle)
+            final MessageConsumer acceptThrottle)
     {
-        final long networkRef = begin.sourceRef();
+        final long acceptRef = begin.sourceRef();
         final String acceptName = begin.source().asString();
 
         final MessagePredicate filter = (t, b, o, l) ->
         {
             final RouteFW route = routeRO.wrap(b, o, l);
-            return networkRef == route.sourceRef() &&
-                    acceptName.equals(route.source().asString());
+            return acceptRef == route.sourceRef() &&
+                   acceptName.equals(route.source().asString());
         };
 
         final RouteFW route = router.resolve(filter, this::wrapRoute);
@@ -145,7 +145,7 @@ public class ProxyStreamFactory implements StreamFactory
         {
             final long networkId = begin.streamId();
 
-            newStream = new ProxyAcceptStream(networkThrottle, networkId)::handleStream;
+            newStream = new ProxyAcceptStream(acceptThrottle, networkId)::handleStream;
         }
 
         return newStream;
@@ -264,6 +264,10 @@ public class ProxyStreamFactory implements StreamFactory
                         this.streamState = this::afterBegin;
                         correlations.put(connectCorrelationId, correlation);
                     }
+                }
+                else
+                {
+                    writer.doReset(acceptThrottle, clientStreamId);
                 }
             }
         }
@@ -670,4 +674,5 @@ public class ProxyStreamFactory implements StreamFactory
     {
         return routeRO.wrap(buffer, index, index + length);
     }
+
 }

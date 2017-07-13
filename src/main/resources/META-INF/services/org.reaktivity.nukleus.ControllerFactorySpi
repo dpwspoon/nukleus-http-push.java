@@ -1,1 +1,1 @@
-org.reaktivity.nukleus.http_push.HttpPushControllerFactorySpi
+org.reaktivity.nukleus.http_push.internal.HttpPushControllerFactorySpi

@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package org.reaktivity.nukleus.http_push;
+package org.reaktivity.nukleus.http_push.internal;
 
 import static org.reaktivity.nukleus.route.RouteKind.PROXY;
 
