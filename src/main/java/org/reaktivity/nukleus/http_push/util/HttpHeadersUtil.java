@@ -81,4 +81,19 @@ public final class HttpHeadersUtil
         return CACHE_CONTROL.equals(name) && value.contains(NO_CACHE);
     };
 
+    public static String getHeader(ListFW<HttpHeaderFW> cachedRequestHeadersRO, String headerName)
+    {
+        // TODO remove GC when have streaming API: https://github.com/reaktivity/nukleus-maven-plugin/issues/16
+        final StringBuilder header = new StringBuilder();
+        cachedRequestHeadersRO.forEach(h ->
+        {
+            if (headerName.equals(h.name().asString()))
+            {
+                // TODO multiple list values?
+                header.append(h.value().asString());
+            }
+        });
+
+        return header.length() == 0 ? null : header.toString();
+    }
 }

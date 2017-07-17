@@ -56,8 +56,8 @@ public class ProxyWithSystemConfigurationIT
     @Test
     @Specification({
         "${route}/proxy/controller",
-        "${streams}/nukleus.sent.reset/accept/client"})
-    public void shouldProxyConnection() throws Exception
+        "${streams}/nukleus.overloaded/accept/client"})
+    public void shouldResetIfOOM() throws Exception
     {
         k3po.finish();
     }

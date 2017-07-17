@@ -72,6 +72,16 @@ public class ProxyIT
     @Test
     @Specification({
         "${route}/proxy/controller",
+        "${streams}/not.inject.push.promise.if.x.poll/accept/client",
+        "${streams}/not.inject.push.promise.if.x.poll/connect/server"})
+    public void notInjectPushPromiseIfXPollInjected() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
         "${streams}/inject.header.values/accept/client",
         "${streams}/inject.header.values/connect/server" })
     public void shouldInjectHeaderValues() throws Exception
@@ -112,16 +122,6 @@ public class ProxyIT
     @Test
     @Specification({
         "${route}/proxy/controller",
-        "${streams}/client.sent.abort/accept/client",
-        "${streams}/client.sent.abort/connect/server" })
-    public void shouldForwardAbortOnAcceptToConnect() throws Exception
-    {
-        k3po.finish();
-    }
-
-    @Test
-    @Specification({
-        "${route}/proxy/controller",
         "${streams}/strip.missing.injected.header.values/accept/client",
         "${streams}/strip.missing.injected.header.values/connect/server" })
     public void shouldStripMissingInjectedHeaderValues() throws Exception
@@ -132,8 +132,19 @@ public class ProxyIT
     @Test
     @Specification({
         "${route}/proxy/controller",
-        "${streams}/client.sent.abort.on.scheduled.poll/accept/client" })
-    public void shouldCancelScheduledPollOnAbort() throws Exception
+        "${streams}/proxy.post.request/accept/client",
+        "${streams}/proxy.post.request/connect/server" })
+    public void shouldProxyPostRequest() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
+        "${streams}/client.sent.abort/accept/client",
+        "${streams}/client.sent.abort/connect/server" })
+    public void shouldForwardAbortOnAcceptToConnect() throws Exception
     {
         k3po.finish();
     }
@@ -144,6 +155,15 @@ public class ProxyIT
         "${streams}/server.sent.abort/accept/client",
         "${streams}/server.sent.abort/connect/server" })
     public void shouldForwardAbortOnConnectReplyToAcceptReply() throws Exception
+    {
+        k3po.finish();
+    }
+
+    @Test
+    @Specification({
+        "${route}/proxy/controller",
+        "${streams}/client.sent.abort.on.scheduled.poll/accept/client" })
+    public void shouldCancelScheduledPollOnAbort() throws Exception
     {
         k3po.finish();
     }

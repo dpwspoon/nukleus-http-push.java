@@ -27,6 +27,7 @@ import org.reaktivity.nukleus.http_push.internal.types.Flyweight;
 import org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW;
 import org.reaktivity.nukleus.http_push.internal.types.OctetsFW;
+import org.reaktivity.nukleus.http_push.internal.types.OctetsFW.Builder;
 import org.reaktivity.nukleus.http_push.internal.types.stream.AbortFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.BeginFW;
 import org.reaktivity.nukleus.http_push.internal.types.stream.DataFW;
@@ -90,10 +91,31 @@ public class Writer
         target.accept(begin.typeId(), begin.buffer(), begin.offset(), begin.sizeof());
     }
 
+    public void doHttpFailedStatus(
+            MessageConsumer target,
+            long targetId,
+            long targetRef,
+            long correlationId)
+    {
+        Consumer<ListFW.Builder<HttpHeaderFW.Builder, HttpHeaderFW>> mutator = x ->
+            x.item(h -> h.representation((byte) 0)
+                        .name(":status")
+                        .value("503"));
+
+        BeginFW begin = beginRW.wrap(writeBuffer, 0, writeBuffer.capacity())
+                .streamId(targetId)
+                .source(SOURCE_NAME_BUFFER, 0, SOURCE_NAME_BUFFER.capacity())
+                .sourceRef(targetRef)
+                .correlationId(correlationId)
+                .extension(e -> e.set(visitHttpBeginEx(mutator)))
+                .build();
+
+        target.accept(begin.typeId(), begin.buffer(), begin.offset(), begin.sizeof());
+    }
+
     public void doH2PushPromise(
         MessageConsumer target,
         long targetId,
-        ListFW<HttpHeaderFW> headers,
         Consumer<ListFW.Builder<HttpHeaderFW.Builder, HttpHeaderFW>> mutator)
     {
         DataFW data = dataRW.wrap(writeBuffer, 0, writeBuffer.capacity())
