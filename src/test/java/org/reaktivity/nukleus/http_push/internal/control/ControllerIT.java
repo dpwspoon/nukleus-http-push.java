@@ -27,7 +27,7 @@ import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 import org.kaazing.k3po.junit.annotation.Specification;
 import org.kaazing.k3po.junit.rules.K3poRule;
-import org.reaktivity.nukleus.http_push.internal.HttpPushController;
+import org.reaktivity.nukleus.http_push.HttpPushController;
 import org.reaktivity.reaktor.test.ReaktorRule;
 
 public class ControllerIT
@@ -43,7 +43,7 @@ public class ControllerIT
         .commandBufferCapacity(1024)
         .responseBufferCapacity(1024)
         .counterValuesBufferCapacity(1024)
-        .controller(HttpPushController.class::isAssignableFrom);
+        .controller(HttpPushController.class::equals);
 
     @Rule
     public final TestRule chain = outerRule(k3po).around(timeout).around(reaktor);
@@ -59,8 +59,8 @@ public class ControllerIT
         k3po.start();
 
         reaktor.controller(HttpPushController.class)
-               .routeProxy("source", 0L, "target", targetRef)
-               .get();
+           .routeProxy("source", 0L, "target", targetRef)
+        .get();
 
         k3po.finish();
     }
@@ -77,14 +77,14 @@ public class ControllerIT
         k3po.start();
 
         long sourceRef = reaktor.controller(HttpPushController.class)
-               .routeProxy("source", 0L, "target", targetRef)
-               .get();
+            .routeProxy("source", 0L, "target", targetRef)
+            .get();
 
         k3po.notifyBarrier("ROUTED_PROXY");
 
         reaktor.controller(HttpPushController.class)
                .unrouteProxy("source", sourceRef, "target", targetRef)
-               .get();
+                  .get();
 
         k3po.finish();
     }

@@ -13,10 +13,11 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package org.reaktivity.nukleus.http_push.internal.control;
+package org.reaktivity.nukleus.http_push.internal.streams.server;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.rules.RuleChain.outerRule;
+import static org.reaktivity.reaktor.internal.ReaktorConfiguration.ABORT_STREAM_FRAME_TYPE_ID;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,42 +26,40 @@ import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 import org.kaazing.k3po.junit.annotation.Specification;
 import org.kaazing.k3po.junit.rules.K3poRule;
+import org.reaktivity.nukleus.http_push.internal.types.stream.AbortFW;
 import org.reaktivity.reaktor.test.ReaktorRule;
 
-public class ControlIT
+public class ProxyWithSystemConfigurationIT
 {
     private final K3poRule k3po = new K3poRule()
         .addScriptRoot("route", "org/reaktivity/specification/nukleus/http_push/control/route")
-        .addScriptRoot("unroute", "org/reaktivity/specification/nukleus/http_push/control/unroute");
+        .addScriptRoot("streams", "org/reaktivity/specification/nukleus/http_push/streams/proxy/");
 
-    private final TestRule timeout = new DisableOnDebug(new Timeout(5, SECONDS));
+    private final TestRule timeout = new DisableOnDebug(new Timeout(15, SECONDS));
 
-    private final ReaktorRule reaktor = new ReaktorRule()
-        .directory("target/nukleus-itests")
-        .commandBufferCapacity(1024)
-        .responseBufferCapacity(1024)
-        .counterValuesBufferCapacity(1024)
-        .nukleus("http-push"::equals);
+    private final ReaktorRule nukleus = new ReaktorRule()
+            .directory("target/nukleus-itests")
+            .commandBufferCapacity(1024)
+            .responseBufferCapacity(1024)
+            .counterValuesBufferCapacity(1024)
+            .nukleus("http-push"::equals)
+            .configure("nukleus.http-push.buffer.slot.capacity", 0)
+            .configure(ABORT_STREAM_FRAME_TYPE_ID, AbortFW.TYPE_ID)
+            .clean();
+
 
     @Rule
-    public final TestRule chain = outerRule(k3po).around(timeout).around(reaktor);
-
-    @Test
-    @Specification({
-        "${route}/proxy/controller"
-    })
-    public void shouldRouteProxy() throws Exception
-    {
-        k3po.finish();
-    }
+    public final TestRule chain = outerRule(nukleus)
+                                    .around(k3po)
+                                    .around(timeout);
 
     @Test
     @Specification({
         "${route}/proxy/controller",
-        "${unroute}/proxy/controller"
-    })
-    public void shouldUnrouteProxy() throws Exception
+        "${streams}/nukleus.overloaded/accept/client"})
+    public void shouldResetIfOOM() throws Exception
     {
         k3po.finish();
     }
+
 }

@@ -15,37 +15,35 @@
  */
 package org.reaktivity.nukleus.http_push.internal;
 
+import static org.reaktivity.nukleus.route.RouteKind.PROXY;
+
 import org.reaktivity.nukleus.Configuration;
+import org.reaktivity.nukleus.Nukleus;
 import org.reaktivity.nukleus.NukleusBuilder;
 import org.reaktivity.nukleus.NukleusFactorySpi;
-import org.reaktivity.nukleus.http_push.internal.conductor.Conductor;
-import org.reaktivity.nukleus.http_push.internal.router.Router;
-import org.reaktivity.nukleus.http_push.internal.watcher.Watcher;
+import org.reaktivity.nukleus.http_push.internal.stream.ProxyStreamFactoryBuilder;
+import org.reaktivity.nukleus.http_push.util.DelayedTaskScheduler;
 
 public final class HttpPushNukleusFactorySpi implements NukleusFactorySpi
 {
+
     @Override
     public String name()
     {
-        return HttpPushNukleus.NAME;
+        return "http-push";
     }
 
     @Override
-    public HttpPushNukleus create(
+    public Nukleus create(
         Configuration config,
         NukleusBuilder builder)
     {
-        Context context = new Context();
-        context.conclude(config);
+        DelayedTaskScheduler scheduler = new DelayedTaskScheduler();
+        builder.inject(scheduler);
+        final ProxyStreamFactoryBuilder proxyFactoryBuilder = new ProxyStreamFactoryBuilder(scheduler::schedule);
 
-        Conductor conductor = new Conductor(context);
-        Watcher watcher = new Watcher(context);
-        Router router = new Router(context);
-
-        conductor.setRouter(router);
-        watcher.setRouter(router);
-        router.setConductor(conductor);
-
-        return new HttpPushNukleus(conductor, watcher, router, context);
+        return builder.streamFactory(PROXY, proxyFactoryBuilder)
+                      .build();
     }
+
 }
