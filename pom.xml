@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.reaktivity</groupId>
   <artifactId>nukleus-http-push</artifactId>
-  <version>develop-SNAPSHOT</version>
+  <version>0.8</version>
   <name>HTTP Push Nukleus Implementation</name>
   <description>HTTP Push Nukleus Implementation</description>
   <url>https://github.com/reaktivity/nukleus-http-push.java</url>
