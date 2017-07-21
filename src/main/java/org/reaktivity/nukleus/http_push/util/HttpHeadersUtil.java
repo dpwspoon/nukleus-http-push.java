@@ -13,8 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-
-package org.reaktivity.nukleus.http_push.internal.util;
+package org.reaktivity.nukleus.http_push.util;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -22,15 +21,25 @@ import java.util.function.Predicate;
 import org.reaktivity.nukleus.http_push.internal.types.HttpHeaderFW;
 import org.reaktivity.nukleus.http_push.internal.types.ListFW;
 
-// TODO move into ListFW and HttpHeaderFW by implementing stream
 public final class HttpHeadersUtil
 {
+
+    public static final String NO_CACHE = "no-cache";
+
+    private HttpHeadersUtil()
+    {
+        // utility
+    }
 
     public static final String CACHE_SYNC = "x-http-cache-sync";
     public static final String INJECTED_HEADER_NAME = "x-poll-injected";
     public static final String INJECTED_HEADER_DEFAULT_VALUE = CACHE_SYNC;
+    public static final String CACHE_CONTROL = "cache-control";
     public static final String INJECTED_HEADER_AND_NO_CACHE_VALUE = INJECTED_HEADER_DEFAULT_VALUE + ", no-cache";
     public static final String POLL_HEADER_NAME = "x-retry-after";
+
+    public static final Predicate<? super HttpHeaderFW> IS_INJECTED_HEADER =
+            h -> INJECTED_HEADER_NAME.equals(h.name().asString());
 
     public static final Predicate<HttpHeaderFW> PUSH_TIMER_FILTER =
             h -> INJECTED_HEADER_NAME.equals(h.name().toString());
@@ -43,7 +52,7 @@ public final class HttpHeadersUtil
     {
         headers.forEach(header ->
         {
-            if(predicate.test(header))
+            if (predicate.test(header))
             {
                 consumer.accept(header);
             }
@@ -69,6 +78,22 @@ public final class HttpHeadersUtil
         String name = h.name().asString();
         String value = h.value().asString();
         // TODO proper parsing of value
-        return "cache-control".equals(name) && value.contains("no-cache");
+        return CACHE_CONTROL.equals(name) && value.contains(NO_CACHE);
     };
+
+    public static String getHeader(ListFW<HttpHeaderFW> cachedRequestHeadersRO, String headerName)
+    {
+        // TODO remove GC when have streaming API: https://github.com/reaktivity/nukleus-maven-plugin/issues/16
+        final StringBuilder header = new StringBuilder();
+        cachedRequestHeadersRO.forEach(h ->
+        {
+            if (headerName.equals(h.name().asString()))
+            {
+                // TODO multiple list values?
+                header.append(h.value().asString());
+            }
+        });
+
+        return header.length() == 0 ? null : header.toString();
+    }
 }

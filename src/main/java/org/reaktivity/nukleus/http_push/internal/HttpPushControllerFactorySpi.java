@@ -13,16 +13,15 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-
 package org.reaktivity.nukleus.http_push.internal;
 
 import org.reaktivity.nukleus.Configuration;
 import org.reaktivity.nukleus.ControllerBuilder;
 import org.reaktivity.nukleus.ControllerFactorySpi;
+import org.reaktivity.nukleus.http_push.HttpPushController;
 
-public class HttpPushControllerFactorySpi implements ControllerFactorySpi<HttpPushController>
+public final class HttpPushControllerFactorySpi implements ControllerFactorySpi<HttpPushController>
 {
-
     @Override
     public String name()
     {
@@ -40,10 +39,8 @@ public class HttpPushControllerFactorySpi implements ControllerFactorySpi<HttpPu
         Configuration config,
         ControllerBuilder<HttpPushController> builder)
     {
-        Context context = new Context();
-        context.readonly(true)
-            .conclude(config);
-
-        return new HttpPushController(context);
+        return builder.setName(name())
+                      .setFactory(HttpPushController::new)
+                      .build();
     }
 }

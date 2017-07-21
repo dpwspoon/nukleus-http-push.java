@@ -6,10 +6,12 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.reaktivity</groupId>
   <artifactId>nukleus-http-push</artifactId>
-  <version>0.7</version>
+  <version>0.8</version>
   <name>HTTP Push Nukleus Implementation</name>
   <description>HTTP Push Nukleus Implementation</description>
   <url>https://github.com/reaktivity/nukleus-http-push.java</url>
+
+<inceptionYear>2016</inceptionYear>
 
   <licenses>
     <license>
@@ -47,13 +49,13 @@
     <jmh.version>1.12</jmh.version>
 
     <k3po.version>3.0.0-alpha-77</k3po.version>
-    <k3po.nukleus.ext.version>0.7.1</k3po.nukleus.ext.version>
+    <k3po.nukleus.ext.version>0.7.2</k3po.nukleus.ext.version>
 
     <nukleus.plugin.version>0.10</nukleus.plugin.version>
-    <nukleus.version>0.6.2</nukleus.version>
+    <nukleus.version>0.7</nukleus.version>
 
-    <nukleus.http.push.spec.version>0.5</nukleus.http.push.spec.version>
-    <reaktor.test.version>0.10</reaktor.test.version>
+    <nukleus.http.push.spec.version>0.7</nukleus.http.push.spec.version>
+    <reaktor.test.version>0.10.2</reaktor.test.version>
   </properties>
 
   <dependencies>
@@ -62,7 +64,7 @@
       <artifactId>nukleus</artifactId>
       <version>${nukleus.version}</version>
     </dependency>
-    <dependency>
+   <dependency>
       <groupId>org.reaktivity</groupId>
       <artifactId>nukleus-http-push.spec</artifactId>
       <version>${nukleus.http.push.spec.version}</version>
@@ -145,6 +147,21 @@
             <exclude>src/conf/**</exclude>
           </excludes>
           <failIfUnknown>true</failIfUnknown>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>2.17</version>
+        <configuration>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
         </configuration>
         <executions>
           <execution>
@@ -329,3 +346,4 @@
   </profiles>
 
 </project>
+
